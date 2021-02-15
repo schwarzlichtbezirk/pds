@@ -1,0 +1,80 @@
+syntax = "proto3";
+option go_package = "github.com/schwarzlichtbezirk/pds-grpc/pds";
+
+package pds;
+
+// Interface exported by the server.
+service PortGuide {
+	// Accepts a stream of Ports and adds them to map.
+	rpc RecordList (stream Port) returns (Summary) {}
+
+	// Stores Port to map and return associated key.
+	rpc SetByKey (Port) returns (Key) {}
+	// Returns Port by associated key.
+	rpc GetByKey (Key) returns (Port) {}
+	// Returns Port by associated name.
+	rpc GetByName (Name) returns (Port) {}
+	// Finds nearest Port to given coordinates.
+	rpc FindNearest (Point) returns (Port) {}
+	// Finds all ports in given circle.
+	rpc FindInCircle (Circle) returns (Ports) {}
+	// Finds all ports each of which contains given text
+	// in one of the fields: name, city, province, country.
+	rpc FindText (Quest) returns (Ports) {}
+}
+
+// Port description.
+message Port {
+	string name = 1;
+	string city = 2;
+	string country = 3;
+	repeated string alias = 4;
+	repeated string regions = 5;
+	repeated float coordinates = 6;
+	string province = 7;
+	string timezone = 8;
+	repeated string unlocs = 9;
+	string code = 10;
+}
+
+// Summary result of ports streaming.
+message Summary {
+	// The number of ports received.
+	int32 port_count = 1;
+	// The duration of the traversal in milliseconds.
+	int32 elapsed_time = 2;
+}
+
+// Port key.
+message Key {
+	string value = 1;
+}
+
+// Port name.
+message Name {
+	string value = 1;
+}
+
+// Quest with text to find in object fields.
+message Quest {
+	string value = 1;
+	bool sensitive = 2;
+	bool whole = 3;
+}
+
+// Point with geo coordinates as latitude-longitude pair.
+message Point {
+	float latitude = 1;
+	float longitude = 2;
+}
+
+// Circle with center at given Point, and radius in meters.
+message Circle {
+	Point center = 1;
+	float radius = 2;
+}
+
+// List on founded ports for given condition.
+message Ports {
+	repeated Port list = 1;
+}
