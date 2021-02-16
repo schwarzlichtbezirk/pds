@@ -21,4 +21,4 @@ EXPOSE 8008
 STOPSIGNAL SIGINT
 
 # Run application with full path representation.
-CMD ["sh", "-c", "${GOPATH}/bin/client"]
+ENTRYPOINT ["/go/bin/client"]

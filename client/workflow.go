@@ -29,51 +29,59 @@ var (
 func Run(gmux *Router) {
 	makeServerLabel("gRPC-PDS", "0.1.0")
 
+	// check up SERVERHOST environment variable
+	if os.Getenv("SERVERHOST") == "" {
+		os.Setenv("SERVERHOST", "localhost")
+	}
+
 	// inits exit channel
 	exitchan = make(chan struct{})
 
 	// helps to start HTTP only after gRPC to prevent call to uninitialized data
 	var grpcready = make(chan struct{})
 
-	// starts HTTP server
-	exitwg.Add(1)
-	go func() {
-		defer exitwg.Done()
-
-		var server = &http.Server{
-			Addr:              cfg.AddrHTTP,
-			Handler:           gmux,
-			ReadTimeout:       time.Duration(cfg.ReadTimeout) * time.Second,
-			ReadHeaderTimeout: time.Duration(cfg.ReadHeaderTimeout) * time.Second,
-			WriteTimeout:      time.Duration(cfg.WriteTimeout) * time.Second,
-			IdleTimeout:       time.Duration(cfg.IdleTimeout) * time.Second,
-			MaxHeaderBytes:    cfg.MaxHeaderBytes,
-		}
+	// starts HTTP servers
+	for _, addr := range cfg.PortHTTP {
+		var addr = envfmt(addr) // localize
+		exitwg.Add(1)
 		go func() {
-			// wait until database will be initialized, and start to receive connections
-			<-grpcready
-			log.Println("web server starts")
-			if err := server.ListenAndServe(); err != http.ErrServerClosed {
-				log.Fatalf("failed to serve: %v", err)
+			defer exitwg.Done()
+
+			var server = &http.Server{
+				Addr:              addr,
+				Handler:           gmux,
+				ReadTimeout:       time.Duration(cfg.ReadTimeout) * time.Second,
+				ReadHeaderTimeout: time.Duration(cfg.ReadHeaderTimeout) * time.Second,
+				WriteTimeout:      time.Duration(cfg.WriteTimeout) * time.Second,
+				IdleTimeout:       time.Duration(cfg.IdleTimeout) * time.Second,
+				MaxHeaderBytes:    cfg.MaxHeaderBytes,
+			}
+			go func() {
+				// wait until database will be initialized, and start to receive connections
+				<-grpcready
+				log.Printf("web server %s starts\n", addr)
+				if err := server.ListenAndServe(); err != http.ErrServerClosed {
+					log.Fatalf("failed to serve: %v", err)
+				}
+			}()
+
+			// wait for exit signal
+			<-exitchan
+
+			// create a deadline to wait for.
+			var ctx, cancel = context.WithTimeout(
+				context.Background(),
+				time.Duration(cfg.ShutdownTimeout)*time.Second)
+			defer cancel()
+
+			server.SetKeepAlivesEnabled(false)
+			if err := server.Shutdown(ctx); err != nil {
+				log.Printf("HTTP server shutdown: %v", err)
+			} else {
+				log.Printf("web server %s closed\n", addr)
 			}
 		}()
-
-		// wait for exit signal
-		<-exitchan
-
-		// create a deadline to wait for.
-		var ctx, cancel = context.WithTimeout(
-			context.Background(),
-			time.Duration(cfg.ShutdownTimeout)*time.Second)
-		defer cancel()
-
-		server.SetKeepAlivesEnabled(false)
-		if err := server.Shutdown(ctx); err != nil {
-			log.Printf("HTTP server shutdown: %v", err)
-		} else {
-			log.Println("web server stopped")
-		}
-	}()
+	}
 
 	// starts gRPC client
 	exitwg.Add(1)
@@ -83,7 +91,7 @@ func Run(gmux *Router) {
 		var err error
 		var conn *grpc.ClientConn
 
-		if conn, err = grpc.Dial(cfg.GrpcAddr, grpc.WithInsecure(), grpc.WithBlock()); err != nil {
+		if conn, err = grpc.Dial(envfmt(cfg.AddrGrpc), grpc.WithInsecure(), grpc.WithBlock()); err != nil {
 			log.Fatalf("fail to dial: %v", err)
 		}
 		grpcClient = pb.NewPortGuideClient(conn)

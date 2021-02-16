@@ -25,7 +25,7 @@ func Run() {
 	exitchan = make(chan struct{})
 
 	// starts gRPC servers
-	for _, addr := range cfg.GrpcPort {
+	for _, addr := range cfg.PortGrpc {
 		var addr = addr // localize
 		exitwg.Add(1)
 		go func() {

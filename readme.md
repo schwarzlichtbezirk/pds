@@ -60,6 +60,14 @@ go install -v github.com/schwarzlichtbezirk/grpc-pds/client
 ```
  5. Run server and then client.
 
+## Connections
+
+Ports thats used at network are defined in configuration of server and client (see files `config.go`).
+
+Server opens port `50051` and `50052` by default, and it can be a list for load balancing.
+
+Client creates one connection to gRPC server on port `50052` by default. Host can be defined by environment variable `SERVERHOST`, and if it not defined or empty, `localhost` is used. Also client opens `8008` port by default to listen for incoming connections to serve REST API, and it can be a list for load balancing.
+
 ## REST API
 
 Arguments of all API calls placed as JSON-objects at request body. Replies comes also only as JSON-objects in all cases.
@@ -108,6 +116,12 @@ Finds all ports each of which contains given text in one of the fields: name, ci
 curl -d "{\"value\":\"dubai\",\"whole\":true}" -X POST localhost:8008/api/port/text
 
 {"list":[{"name":"Dubai","city":"Dubai","country":"United Arab Emirates","coordinates":[55.27,25.25],"province":"Dubayy [Dubai]","timezone":"Asia/Dubai","unlocs":["AEDXB"],"code":"52005"},{"name":"Port Rashid","city":"Port Rashid","country":"United Arab Emirates","coordinates":[55.27565,25.284756],"province":"Dubai","timezone":"Asia/Dubai","unlocs":["AEPRA"],"code":"52005"},{"name":"Jebel Ali","city":"Jebel Ali","country":"United Arab Emirates","coordinates":[55.02729,24.985714],"province":"Dubai","timezone":"Asia/Dubai","unlocs":["AEJEA"],"code":"52051"}]}
+```
+
+```batch
+curl -d "{\"value\":\"miam\",\"whole\":false}" -X POST localhost:8008/api/port/text
+
+{"list":[{"name":"Miami","city":"Miami","country":"United States","coordinates":[-80.19179,25.76168],"province":"Florida","timezone":"America/New_York","unlocs":["USMIA"],"code":"5201"}]}
 ```
 
 ---

@@ -20,4 +20,4 @@ EXPOSE 50051 50052
 STOPSIGNAL SIGINT
 
 # Run application with full path representation.
-CMD ["sh", "-c", "${GOPATH}/bin/server"]
+ENTRYPOINT ["/go/bin/server"]
