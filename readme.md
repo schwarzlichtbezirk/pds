@@ -6,7 +6,7 @@ Client and server test sample with gRPC streaming and REST functionality. Sample
  - errors checking at all source code points.
  - domain driven design.
  - single application configuration.
- - graceful servers start and shutdown.
+ - safely servers start and graceful shutdown.
 
 ## Source code structure
 
@@ -42,6 +42,16 @@ go get -u google.golang.org/genproto
 go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
 go install google.golang.org/protobuf/cmd/protoc-gen-go
 ```
+Another way to get `grpc` source code and its dependencies if there is no access to `golang.org` is git repositories cloning:
+```batch
+git clone https://github.com/grpc/grpc-go.git %GOPATH%/src/google.golang.org/grpc
+git clone https://github.com/protocolbuffers/protobuf-go.git %GOPATH%/src/google.golang.org/protobuf
+git clone https://github.com/googleapis/go-genproto.git %GOPATH%/src/google.golang.org/genproto
+git clone https://github.com/golang/protobuf.git %GOPATH%/src/github.com/golang/protobuf
+git clone https://github.com/golang/text.git %GOPATH%/src/golang.org/x/text
+git clone https://github.com/golang/net.git %GOPATH%/src/golang.org/x/net
+git clone https://github.com/golang/sys.git %GOPATH%/src/golang.org/x/sys
+```
  4. Fetch this source code and compile application.
 ```batch
 go get github.com/schwarzlichtbezirk/grpc-pds
@@ -56,19 +66,19 @@ Arguments of all API calls placed as JSON-objects at request body. Replies comes
 
 Errors come on replies with status >= 300 as objects like `{"what":"some error message","when":1613251727492,"code":3}` where `when` is Unix time in milliseconds of error occurrence, `code` is unique error source point code.
 
-### Get port object by key `/api/port/get`
-Returns port object with given associated key.
-```batch
-curl -d "{\"value\":\"AEDXB\"}" -X POST localhost:8008/api/port/get
-
-{"name":"Dubai","city":"Dubai","country":"United Arab Emirates","coordinates":[55.27,25.25],"province":"Dubayy [Dubai]","timezone":"Asia/Dubai","unlocs":["AEDXB"],"code":"52005"}
-```
 ### Store port object `/api/port/set`
 Store port object to database, or replace with existing key (that placed in `unlocs` field of object).
 ```batch
 curl -d "{\"name\":\"Dubai\",\"city\":\"Dubai\",\"country\":\"United Arab Emirates\",\"coordinates\":[55.27,25.25],\"province\":\"Dubayy [Dubai]\",\"timezone\":\"Asia/Dubai\",\"unlocs\":[\"AEDXB\"],\"code\":\"52005\"}" -X POST localhost:8008/api/port/set
 
 {"value":"AEDXB"}
+```
+### Get port object by key `/api/port/get`
+Returns port object with given associated key.
+```batch
+curl -d "{\"value\":\"AEDXB\"}" -X POST localhost:8008/api/port/get
+
+{"name":"Dubai","city":"Dubai","country":"United Arab Emirates","coordinates":[55.27,25.25],"province":"Dubayy [Dubai]","timezone":"Asia/Dubai","unlocs":["AEDXB"],"code":"52005"}
 ```
 ### Get port object by name `/api/port/name`
 Returns port object with given name. It's looking for port with strict name match.

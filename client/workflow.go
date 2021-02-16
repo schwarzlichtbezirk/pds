@@ -40,7 +40,6 @@ func Run(gmux *Router) {
 	go func() {
 		defer exitwg.Done()
 
-		log.Println("web server starts")
 		var server = &http.Server{
 			Addr:              cfg.AddrHTTP,
 			Handler:           gmux,
@@ -53,6 +52,7 @@ func Run(gmux *Router) {
 		go func() {
 			// wait until database will be initialized, and start to receive connections
 			<-grpcready
+			log.Println("web server starts")
 			if err := server.ListenAndServe(); err != http.ErrServerClosed {
 				log.Fatalf("failed to serve: %v", err)
 			}
