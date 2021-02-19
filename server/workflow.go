@@ -39,7 +39,8 @@ func Run() {
 				log.Fatalf("failed to listen: %v", err)
 			}
 			var server = grpc.NewServer()
-			pb.RegisterPortGuideServer(server, &routeGuideServer{addr: addr})
+			pb.RegisterToolGuideServer(server, &routeToolGuideServer{addr: addr})
+			pb.RegisterPortGuideServer(server, &routePortGuideServer{addr: addr})
 			go func() {
 				if err = server.Serve(lis); err != nil {
 					log.Fatalf("failed to serve: %v", err)

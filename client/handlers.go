@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"errors"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
 
@@ -18,35 +20,38 @@ const (
 	AECnoreq   = 2
 	AECbadjson = 3
 
+	// api/tool/ping
+	AECtoolpingcallfail = 10
+
 	// api/port/set
 
-	AECportsetnodata   = 10
-	AECportsetcallfail = 11
+	AECportsetnodata   = 11
+	AECportsetcallfail = 12
 
 	// api/port/get
 
-	AECportgetnodata   = 12
-	AECportgetcallfail = 13
+	AECportgetnodata   = 13
+	AECportgetcallfail = 14
 
 	// api/port/name
 
-	AECportnamenodata   = 14
-	AECportnamecallfail = 15
+	AECportnamenodata   = 15
+	AECportnamecallfail = 16
 
 	// api/port/near
 
-	AECportnearnodata   = 16
-	AECportnearcallfail = 17
+	AECportnearnodata   = 17
+	AECportnearcallfail = 18
 
 	// api/port/circle
 
-	AECportcircnodata   = 17
-	AECportcirccallfail = 18
+	AECportcircnodata   = 19
+	AECportcirccallfail = 20
 
-	// api/port/city
+	// api/port/text
 
-	AECportcitynodata   = 19
-	AECportcitycallfail = 20
+	AECportcitynodata   = 21
+	AECportcitycallfail = 22
 )
 
 // HTTP error messages
@@ -54,6 +59,27 @@ var (
 	ErrNoJSON = errors.New("data not given")
 	ErrNoData = errors.New("data is empty")
 )
+
+func apiToolPing(w http.ResponseWriter, r *http.Request) {
+	var err error
+	var body, _ = ioutil.ReadAll(r.Body)
+	var ret *pb.Content
+
+	// limit execution time of the action
+	var ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	// make rpc call
+	if ret, err = grpcTool.Ping(ctx, &pb.Content{Value: body}); err != nil {
+		WriteError500(w, err, AECtoolpingcallfail)
+		return
+	}
+
+	log.Printf("grpc-ping: %s\n", body)
+	w.WriteHeader(http.StatusOK)
+	WriteJSONHeader(w)
+	w.Write(ret.Value)
+}
 
 func apiPortSet(w http.ResponseWriter, r *http.Request) {
 	var err error

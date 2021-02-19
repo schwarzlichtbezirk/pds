@@ -16,7 +16,7 @@ RUN git clone https://github.com/schwarzlichtbezirk/pds-grpc.git ${GOPATH}/src/g
 # gRPC listens ports.
 EXPOSE 50051 50052
 
-# simulate 'Ctrl+C'.
+# Simulate 'Ctrl+C'.
 STOPSIGNAL SIGINT
 
 # Run application with full path representation.

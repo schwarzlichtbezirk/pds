@@ -3,7 +3,18 @@ option go_package = "github.com/schwarzlichtbezirk/pds-grpc/pds";
 
 package pds;
 
-// Interface exported by the server.
+// Interface with system helper functionality.
+service ToolGuide {
+	// Check up service health.
+	rpc Ping (Content) returns (Content) {}
+}
+
+// Ping message content.
+message Content {
+	bytes Value = 1;
+}
+
+// Interface with port functionality.
 service PortGuide {
 	// Accepts a stream of Ports and adds them to map.
 	rpc RecordList (stream Port) returns (Summary) {}

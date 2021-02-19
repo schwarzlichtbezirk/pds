@@ -66,7 +66,26 @@ Ports thats used at network are defined in configuration of server and client (s
 
 Server opens port `50051` and `50052` by default, and it can be a list for load balancing.
 
-Client creates one connection to gRPC server on port `50052` by default. Host can be defined by environment variable `SERVERHOST`, and if it not defined or empty, `localhost` is used. Also client opens `8008` port by default to listen for incoming connections to serve REST API, and it can be a list for load balancing.
+Client creates one connection to gRPC server on port `50052` by default. Host can be defined by environment variable `PDSBACKURL`, and if it not defined or empty, `localhost` is used. Also client opens `8008` port by default to listen for incoming connections to serve REST API, and it can be a list for load balancing.
+
+On localhost server and client can be run as is without any modifications in configuration.
+
+## How to run in docker
+
+On first step create network, its created only once.
+```batch
+docker network create -d bridge --subnet 172.20.0.0/16 pds-net
+```
+Then build docker images.  Dockerfiles does not expects current directory, so images can be built from any path.
+```batch
+docker build --force-rm -t pds-server %GOPATH%/src/github.com/schwarzlichtbezirk/pds-grpc/server
+docker build --force-rm -t pds-client %GOPATH%/src/github.com/schwarzlichtbezirk/pds-grpc/client
+```
+Then it should be run containers on `pds-net` network.
+```batch
+docker run --rm -d -p 50051:50051 -p 50052:50052 --network=pds-net --ip=172.20.1.7 --name server pds-server
+docker run --rm -d -p 8008:8008 --network=pds-net --ip=172.20.1.8 -e PDSBACKURL="172.20.1.7" --name client pds-client
+```
 
 ## REST API
 
@@ -81,6 +100,7 @@ curl -d "{\"name\":\"Dubai\",\"city\":\"Dubai\",\"country\":\"United Arab Emirat
 
 {"value":"AEDXB"}
 ```
+
 ### Get port object by key `/api/port/get`
 Returns port object with given associated key.
 ```batch
@@ -88,6 +108,7 @@ curl -d "{\"value\":\"AEDXB\"}" -X POST localhost:8008/api/port/get
 
 {"name":"Dubai","city":"Dubai","country":"United Arab Emirates","coordinates":[55.27,25.25],"province":"Dubayy [Dubai]","timezone":"Asia/Dubai","unlocs":["AEDXB"],"code":"52005"}
 ```
+
 ### Get port object by name `/api/port/name`
 Returns port object with given name. It's looking for port with strict name match.
 ```batch
@@ -95,6 +116,7 @@ curl -d "{\"value\":\"Dubai\"}" -X POST localhost:8008/api/port/name
 
 {"name":"Dubai","city":"Dubai","country":"United Arab Emirates","coordinates":[55.27,25.25],"province":"Dubayy [Dubai]","timezone":"Asia/Dubai","unlocs":["AEDXB"],"code":"52005"}
 ```
+
 ### Find nearest port `/api/port/near`
 Finds nearest Port to given coordinates. Recieves `Point` with searching latitude and longitude and returns port with nearest coodinates to given point. Be considered that at port coordinates first value is longitude, second value is latitude.
 
@@ -103,6 +125,7 @@ curl -d "{\"latitude\":25.873280,\"longitude\":55.011377}" -X POST localhost:800
 
 {"name":"Umm al Qaiwain","city":"Umm al Qaiwain","country":"United Arab Emirates","coordinates":[55.55,25.57],"province":"Umm Al Quwain","timezone":"Asia/Dubai","unlocs":["AEQIW"]}
 ```
+
 ### Find ports in circle `/api/port/circle`
 Finds all ports in given circle. Circle determined by latitude/longitude point of center, and radius in meters.
 ```batch
@@ -110,6 +133,7 @@ curl -d "{\"center\":{\"latitude\":25.458155,\"longitude\":55.148621},\"radius\"
 
 {"list":[{"name":"Sharjah","city":"Sharjah","country":"United Arab Emirates","coordinates":[55.38,25.35],"province":"Ash Shariqah [Sharjah]","timezone":"Asia/Dubai","unlocs":["AESHJ"],"code":"52070"},{"name":"Dubai","city":"Dubai","country":"United Arab Emirates","coordinates":[55.27,25.25],"province":"Dubayy [Dubai]","timezone":"Asia/Dubai","unlocs":["AEDXB"],"code":"52005"},{"name":"Ajman","city":"Ajman","country":"United Arab Emirates","coordinates":[55.513645,25.405216],"province":"Ajman","timezone":"Asia/Dubai","unlocs":["AEAJM"],"code":"52000"},{"name":"Port Rashid","city":"Port Rashid","country":"United Arab Emirates","coordinates":[55.27565,25.284756],"province":"Dubai","timezone":"Asia/Dubai","unlocs":["AEPRA"],"code":"52005"}]}
 ```
+
 ### Find ports with text `/api/port/text`
 Finds all ports each of which contains given text in one of the fields: name, city, province, country. Field `sensitive` of argument makes search case sensitive; `whole` matches entire string. Returns list of founded ports if it has.
 ```batch

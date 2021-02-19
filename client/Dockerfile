@@ -17,7 +17,11 @@ RUN go get -d -v github.com/gorilla/mux &&\
 # REST listen port.
 EXPOSE 8008
 
-# simulate 'Ctrl+C'.
+# Ping web service to check health.
+HEALTHCHECK --interval=15s --timeout=3s\
+    CMD curl -f -d "healthcheck" http://localhost:8008/api/tool/ping || exit 1
+
+# Simulate 'Ctrl+C'.
 STOPSIGNAL SIGINT
 
 # Run application with full path representation.

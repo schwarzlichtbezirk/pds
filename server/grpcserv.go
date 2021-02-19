@@ -12,6 +12,9 @@ import (
 	pb "github.com/schwarzlichtbezirk/pds-grpc/pds"
 )
 
+// Storage is singleton, PDS database
+var storage sync.Map
+
 // Haversine calculates distance in meters between two lati­tude/longi­tude points.
 func Haversine(lat1, lon1, lat2, lon2 float64) float64 {
 	const R = 6371e3              // metres
@@ -27,15 +30,21 @@ func Haversine(lat1, lon1, lat2, lon2 float64) float64 {
 	return d
 }
 
-type routeGuideServer struct {
+type routeToolGuideServer struct {
+	pb.UnimplementedToolGuideServer
+	addr string
+}
+
+func (routeToolGuideServer) Ping(ctx context.Context, cnt *pb.Content) (*pb.Content, error) {
+	return cnt, nil
+}
+
+type routePortGuideServer struct {
 	pb.UnimplementedPortGuideServer
 	addr string
 }
 
-// Storage is singleton, PDS database
-var storage sync.Map
-
-func (s *routeGuideServer) RecordList(stream pb.PortGuide_RecordListServer) error {
+func (s *routePortGuideServer) RecordList(stream pb.PortGuide_RecordListServer) error {
 	var count int32
 	var startTime = time.Now()
 	for {
@@ -56,20 +65,20 @@ func (s *routeGuideServer) RecordList(stream pb.PortGuide_RecordListServer) erro
 	}
 }
 
-func (s *routeGuideServer) SetByKey(ctx context.Context, port *pb.Port) (*pb.Key, error) {
+func (s *routePortGuideServer) SetByKey(ctx context.Context, port *pb.Port) (*pb.Key, error) {
 	var key = port.GetUnlocs()[0]
 	storage.Store(key, port)
 	return &pb.Key{Value: key}, nil
 }
 
-func (s *routeGuideServer) GetByKey(ctx context.Context, key *pb.Key) (*pb.Port, error) {
+func (s *routePortGuideServer) GetByKey(ctx context.Context, key *pb.Key) (*pb.Port, error) {
 	if v, ok := storage.Load(key.Value); ok {
 		return v.(*pb.Port), nil
 	}
 	return &pb.Port{}, nil
 }
 
-func (s *routeGuideServer) GetByName(ctx context.Context, name *pb.Name) (*pb.Port, error) {
+func (s *routePortGuideServer) GetByName(ctx context.Context, name *pb.Name) (*pb.Port, error) {
 	var found = &pb.Port{} // result
 	storage.Range(func(key, val interface{}) bool {
 		var port = val.(*pb.Port)
@@ -82,7 +91,7 @@ func (s *routeGuideServer) GetByName(ctx context.Context, name *pb.Name) (*pb.Po
 	return found, nil
 }
 
-func (s *routeGuideServer) FindNearest(ctx context.Context, coord *pb.Point) (*pb.Port, error) {
+func (s *routePortGuideServer) FindNearest(ctx context.Context, coord *pb.Point) (*pb.Port, error) {
 	var distance float64 = 1e10 // let's set it to any maximum possible value
 	var found = &pb.Port{}      // result
 	storage.Range(func(key, val interface{}) bool {
@@ -100,7 +109,7 @@ func (s *routeGuideServer) FindNearest(ctx context.Context, coord *pb.Point) (*p
 	return found, nil
 }
 
-func (s *routeGuideServer) FindInCircle(ctx context.Context, circ *pb.Circle) (*pb.Ports, error) {
+func (s *routePortGuideServer) FindInCircle(ctx context.Context, circ *pb.Circle) (*pb.Ports, error) {
 	var ports = pb.Ports{}
 	var r = float64(circ.Radius)
 	storage.Range(func(key, val interface{}) bool {
@@ -118,7 +127,7 @@ func (s *routeGuideServer) FindInCircle(ctx context.Context, circ *pb.Circle) (*
 	return &ports, nil
 }
 
-func (s *routeGuideServer) FindText(ctx context.Context, q *pb.Quest) (*pb.Ports, error) {
+func (s *routePortGuideServer) FindText(ctx context.Context, q *pb.Quest) (*pb.Ports, error) {
 	var sub = q.Value
 	if !q.Sensitive {
 		sub = strings.ToLower(sub)

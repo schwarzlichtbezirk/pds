@@ -23,15 +23,16 @@ var (
 
 var (
 	grpcClient pb.PortGuideClient
+	grpcTool   pb.ToolGuideClient
 )
 
 // Run launches server listeners.
 func Run(gmux *Router) {
 	makeServerLabel("gRPC-PDS", "0.1.0")
 
-	// check up SERVERHOST environment variable
-	if os.Getenv("SERVERHOST") == "" {
-		os.Setenv("SERVERHOST", "localhost")
+	// check up PDSBACKURL environment variable
+	if os.Getenv("PDSBACKURL") == "" {
+		os.Setenv("PDSBACKURL", "localhost")
 	}
 
 	// inits exit channel
@@ -58,7 +59,12 @@ func Run(gmux *Router) {
 			}
 			go func() {
 				// wait until database will be initialized, and start to receive connections
-				<-grpcready
+				// or until exit is signaled
+				select {
+				case <-grpcready:
+				case <-exitchan:
+					return
+				}
 				log.Printf("web server %s starts\n", addr)
 				if err := server.ListenAndServe(); err != http.ErrServerClosed {
 					log.Fatalf("failed to serve: %v", err)
@@ -76,7 +82,7 @@ func Run(gmux *Router) {
 
 			server.SetKeepAlivesEnabled(false)
 			if err := server.Shutdown(ctx); err != nil {
-				log.Printf("HTTP server shutdown: %v", err)
+				log.Printf("HTTP server shutdown: %v\n", err)
 			} else {
 				log.Printf("web server %s closed\n", addr)
 			}
@@ -91,12 +97,15 @@ func Run(gmux *Router) {
 		var err error
 		var conn *grpc.ClientConn
 
-		if conn, err = grpc.Dial(envfmt(cfg.AddrGrpc), grpc.WithInsecure(), grpc.WithBlock()); err != nil {
+		var addr = envfmt(cfg.AddrGrpc)
+		log.Printf("grpc connecting to %s\n", addr)
+		if conn, err = grpc.Dial(addr, grpc.WithInsecure(), grpc.WithBlock()); err != nil {
 			log.Fatalf("fail to dial: %v", err)
 		}
 		grpcClient = pb.NewPortGuideClient(conn)
+		grpcTool = pb.NewToolGuideClient(conn)
 
-		log.Println("grpc connected")
+		log.Printf("grpc connected to %s\n", addr)
 
 		if err := ReadDataFile(envfmt(cfg.DataFile)); err != nil {
 			log.Fatal(err)
@@ -109,7 +118,7 @@ func Run(gmux *Router) {
 		<-exitchan
 
 		if err := conn.Close(); err != nil {
-			log.Printf("gRPC disconnect: %v", err)
+			log.Printf("gRPC disconnect: %v\n", err)
 		} else {
 			log.Println("grpc disconnected")
 		}

@@ -29,6 +29,6 @@ var cfg = Config{ // inits default values:
 		MaxHeaderBytes:    1 << 20,
 		ShutdownTimeout:   15,
 	},
-	AddrGrpc: "${SERVERHOST}:50052",
+	AddrGrpc: "${PDSBACKURL}:50052",
 	DataFile: "${GOPATH}/src/github.com/schwarzlichtbezirk/pds-grpc/config/ports.json",
 }

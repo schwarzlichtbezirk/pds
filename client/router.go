@@ -47,13 +47,15 @@ func (e *ErrAjax) MarshalJSON() ([]byte, error) {
 // RegisterRoutes puts application routes to given router.
 func RegisterRoutes(gmux *Router) {
 	// API routes
-	var api = gmux.PathPrefix("/api/port").Subrouter()
-	api.Path("/set").HandlerFunc(apiPortSet)
-	api.Path("/get").HandlerFunc(apiPortGet)
-	api.Path("/name").HandlerFunc(apiPortName)
-	api.Path("/near").HandlerFunc(apiPortNear)
-	api.Path("/circle").HandlerFunc(apiPortCircle)
-	api.Path("/text").HandlerFunc(apiPortText)
+	var tool = gmux.PathPrefix("/api/tool").Subrouter()
+	tool.Path("/ping").HandlerFunc(apiToolPing)
+	var port = gmux.PathPrefix("/api/port").Subrouter()
+	port.Path("/set").HandlerFunc(apiPortSet)
+	port.Path("/get").HandlerFunc(apiPortGet)
+	port.Path("/name").HandlerFunc(apiPortName)
+	port.Path("/near").HandlerFunc(apiPortNear)
+	port.Path("/circle").HandlerFunc(apiPortCircle)
+	port.Path("/text").HandlerFunc(apiPortText)
 }
 
 // UnixJS converts time to UNIX-time in milliseconds, compatible with javascript time format.
