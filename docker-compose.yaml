@@ -1,0 +1,42 @@
+services:
+
+  server:
+    image: pds-server
+    ports:
+      - 50051:50051
+      - 50052:50052
+    networks:
+      pds-net:
+        ipv4_address: 172.20.1.7
+        aliases:
+          - backend
+    restart: on-failure
+    stop_signal: SIGINT
+    stop_grace_period: 15s
+
+  client:
+    image: pds-client
+    depends_on:
+      - server
+    ports:
+      - 8008:8008
+    networks:
+      pds-net:
+        ipv4_address: 172.20.1.8
+        aliases:
+          - frontend
+    environment:
+      PDSBACKURL: 172.20.1.7:50052
+    restart: on-failure
+    stop_signal: SIGINT
+    stop_grace_period: 15s
+
+networks:
+  pds-net:
+    external: false
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+          ip_range: 172.20.1.0/24
+          gateway: 172.20.1.254

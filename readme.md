@@ -72,20 +72,27 @@ On localhost server and client can be run as is without any modifications in con
 
 ## How to run in docker
 
-On first step create network, its created only once.
-```batch
-docker network create -d bridge --subnet 172.20.0.0/16 pds-net
-```
-Then build docker images.  Dockerfiles does not expects current directory, so images can be built from any path.
+First of all, build docker images.  Dockerfiles does not expects current directory, so images can be built from any path.
 ```batch
 docker build --force-rm -t pds-server %GOPATH%/src/github.com/schwarzlichtbezirk/pds-grpc/server
 docker build --force-rm -t pds-client %GOPATH%/src/github.com/schwarzlichtbezirk/pds-grpc/client
 ```
+
+### Run standalone containers
+
+Create a network, its created only once.
+```batch
+docker network create -d bridge --subnet 172.20.0.0/16 pds-net
+```
 Then it should be run containers on `pds-net` network.
 ```batch
 docker run --rm -d -p 50051:50051 -p 50052:50052 --network=pds-net --ip=172.20.1.7 --name server pds-server
-docker run --rm -d -p 8008:8008 --network=pds-net --ip=172.20.1.8 -e PDSBACKURL="172.20.1.7" --name client pds-client
+docker run --rm -d -p 8008:8008 --network=pds-net --ip=172.20.1.8 -e PDSBACKURL="172.20.1.7:50052" --name client pds-client
 ```
+
+### Run by docker compose file
+
+Docker compose file uses already builded images and creates internal network for containers.
 
 ## REST API
 

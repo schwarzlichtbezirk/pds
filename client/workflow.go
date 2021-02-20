@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -32,7 +33,7 @@ func Run(gmux *Router) {
 
 	// check up PDSBACKURL environment variable
 	if os.Getenv("PDSBACKURL") == "" {
-		os.Setenv("PDSBACKURL", "localhost")
+		os.Setenv("PDSBACKURL", "localhost:50052")
 	}
 
 	// inits exit channel
@@ -97,15 +98,26 @@ func Run(gmux *Router) {
 		var err error
 		var conn *grpc.ClientConn
 
-		var addr = envfmt(cfg.AddrGrpc)
-		log.Printf("grpc connecting to %s\n", addr)
-		if conn, err = grpc.Dial(addr, grpc.WithInsecure(), grpc.WithBlock()); err != nil {
-			log.Fatalf("fail to dial: %v", err)
-		}
-		grpcClient = pb.NewPortGuideClient(conn)
-		grpcTool = pb.NewToolGuideClient(conn)
+		var addrs = strings.Split(envfmt(cfg.AddrGRPC), ";")
+		log.Printf("grpc connecting to %s\n", addrs[0])
+		var ctx, cancel = context.WithCancel(context.Background())
+		go func() {
+			defer cancel()
+			if conn, err = grpc.DialContext(ctx, addrs[0], grpc.WithInsecure(), grpc.WithBlock()); err != nil {
+				log.Fatalf("fail to dial: %v", err)
+			}
+			grpcClient = pb.NewPortGuideClient(conn)
+			grpcTool = pb.NewToolGuideClient(conn)
 
-		log.Printf("grpc connected to %s\n", addr)
+			log.Printf("grpc connected to %s\n", addrs[0])
+		}()
+		// wait until connect will be established or have got exit signal
+		select {
+		case <-ctx.Done():
+		case <-exitchan:
+			cancel()
+			return
+		}
 
 		if err := ReadDataFile(envfmt(cfg.DataFile)); err != nil {
 			log.Fatal(err)

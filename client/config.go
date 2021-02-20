@@ -14,7 +14,7 @@ type CfgServ struct {
 // Config is common service settings.
 type Config struct {
 	CfgServ  `json:"webserver" yaml:"webserver"`
-	AddrGrpc string `json:"addr-grpc" yaml:"addr-grpc"`
+	AddrGRPC string `json:"addr-grpc" yaml:"addr-grpc"`
 	DataFile string `json:"data-file" yaml:"data-file"`
 }
 
@@ -29,6 +29,6 @@ var cfg = Config{ // inits default values:
 		MaxHeaderBytes:    1 << 20,
 		ShutdownTimeout:   15,
 	},
-	AddrGrpc: "${PDSBACKURL}:50052",
+	AddrGRPC: "${PDSBACKURL}",
 	DataFile: "${GOPATH}/src/github.com/schwarzlichtbezirk/pds-grpc/config/ports.json",
 }

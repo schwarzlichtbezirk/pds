@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 
@@ -75,7 +74,6 @@ func apiToolPing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("grpc-ping: %s\n", body)
 	w.WriteHeader(http.StatusOK)
 	WriteJSONHeader(w)
 	w.Write(ret.Value)
