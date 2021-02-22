@@ -92,10 +92,10 @@ func Transactions(t *testing.T) {
 	)
 
 	// make client connection for gRPC on localhost
-	if len(cfg.PortGrpc) == 0 {
+	if len(cfg.PortGRPC) == 0 {
 		t.Fatal("no any grpc port defined")
 	}
-	if grpcConn, err = grpc.Dial("localhost"+cfg.PortGrpc[0], grpc.WithInsecure(), grpc.WithBlock()); err != nil {
+	if grpcConn, err = grpc.Dial("localhost"+cfg.PortGRPC[0], grpc.WithInsecure(), grpc.WithBlock()); err != nil {
 		t.Fatalf("fail to dial: %v", err)
 	}
 	defer func() {

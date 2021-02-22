@@ -2,6 +2,7 @@
 Client and server test sample with gRPC streaming and REST functionality. Sample features:
  - REST service.
  - gRPC service.
+ - load balancing for gRPC backend.
  - uniform code style with documentation.
  - errors checking at all source code points.
  - domain driven design.
@@ -64,9 +65,9 @@ go install -v github.com/schwarzlichtbezirk/grpc-pds/client
 
 Ports thats used at network are defined in configuration of server and client (see files `config.go`).
 
-Server opens port `50051` and `50052` by default, and it can be a list for load balancing.
+Server serving on `50051` and `50052` ports by default, and it can be a list for load balancing.
 
-Client creates one connection to gRPC server on port `50052` by default. Host can be defined by environment variable `PDSBACKURL`, and if it not defined or empty, `localhost` is used. Also client opens `8008` port by default to listen for incoming connections to serve REST API, and it can be a list for load balancing.
+Client creates connection to gRPC server on the same ports. There is used `round_robin` load balancer policy. Host can be defined by environment variable `PDSBACKURL`, and if it not defined or empty, `localhost` is used. Also client opens `8008` port by default to listen for incoming connections to serve REST API, and it can be a list for load balancing.
 
 On localhost server and client can be run as is without any modifications in configuration.
 
@@ -74,8 +75,8 @@ On localhost server and client can be run as is without any modifications in con
 
 First of all, build docker images.  Dockerfiles does not expects current directory, so images can be built from any path.
 ```batch
-docker build --force-rm -t pds-server %GOPATH%/src/github.com/schwarzlichtbezirk/pds-grpc/server
-docker build --force-rm -t pds-client %GOPATH%/src/github.com/schwarzlichtbezirk/pds-grpc/client
+docker build --rm -t pds-server %GOPATH%/src/github.com/schwarzlichtbezirk/pds-grpc/server
+docker build --rm -t pds-client %GOPATH%/src/github.com/schwarzlichtbezirk/pds-grpc/client
 ```
 
 ### Run standalone containers
@@ -87,7 +88,7 @@ docker network create -d bridge --subnet 172.20.0.0/16 pds-net
 Then it should be run containers on `pds-net` network.
 ```batch
 docker run --rm -d -p 50051:50051 -p 50052:50052 --network=pds-net --ip=172.20.1.7 --name server pds-server
-docker run --rm -d -p 8008:8008 --network=pds-net --ip=172.20.1.8 -e PDSBACKURL="172.20.1.7:50052" --name client pds-client
+docker run --rm -d -p 8008:8008 --network=pds-net --ip=172.20.1.8 -e PDSBACKURL="172.20.1.7" --name client pds-client
 ```
 
 ### Run by docker compose file

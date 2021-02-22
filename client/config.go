@@ -15,6 +15,7 @@ type CfgServ struct {
 type Config struct {
 	CfgServ  `json:"webserver" yaml:"webserver"`
 	AddrGRPC string `json:"addr-grpc" yaml:"addr-grpc"`
+	PortGRPC string `json:"port-grpc" yaml:"port-grpc"`
 	DataFile string `json:"data-file" yaml:"data-file"`
 }
 
@@ -30,5 +31,6 @@ var cfg = Config{ // inits default values:
 		ShutdownTimeout:   15,
 	},
 	AddrGRPC: "${PDSBACKURL}",
-	DataFile: "${GOPATH}/src/github.com/schwarzlichtbezirk/pds-grpc/config/ports.json",
+	PortGRPC: ":50051;:50052",
+	DataFile: "ports.json",
 }

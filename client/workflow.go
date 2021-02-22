@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +14,8 @@ import (
 
 	pb "github.com/schwarzlichtbezirk/pds-grpc/pds"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/resolver"
+	"google.golang.org/grpc/resolver/manual"
 )
 
 var (
@@ -31,9 +34,13 @@ var (
 func Run(gmux *Router) {
 	makeServerLabel("gRPC-PDS", "0.1.0")
 
+	// get confiruration path
+	DetectConfigPath()
+	log.Printf("config path: %s\n", ConfigPath)
+
 	// check up PDSBACKURL environment variable
 	if os.Getenv("PDSBACKURL") == "" {
-		os.Setenv("PDSBACKURL", "localhost:50052")
+		os.Setenv("PDSBACKURL", "localhost")
 	}
 
 	// inits exit channel
@@ -66,7 +73,7 @@ func Run(gmux *Router) {
 				case <-exitchan:
 					return
 				}
-				log.Printf("web server %s starts\n", addr)
+				log.Printf("start http on %s\n", addr)
 				if err := server.ListenAndServe(); err != http.ErrServerClosed {
 					log.Fatalf("failed to serve: %v", err)
 				}
@@ -83,9 +90,9 @@ func Run(gmux *Router) {
 
 			server.SetKeepAlivesEnabled(false)
 			if err := server.Shutdown(ctx); err != nil {
-				log.Printf("HTTP server shutdown: %v\n", err)
+				log.Printf("shutdown http on %s: %v\n", addr, err)
 			} else {
-				log.Printf("web server %s closed\n", addr)
+				log.Printf("stop http on %s\n", addr)
 			}
 		}()
 	}
@@ -98,18 +105,37 @@ func Run(gmux *Router) {
 		var err error
 		var conn *grpc.ClientConn
 
-		var addrs = strings.Split(envfmt(cfg.AddrGRPC), ";")
-		log.Printf("grpc connecting to %s\n", addrs[0])
+		var addrs []resolver.Address
+		for _, url := range strings.Split(envfmt(cfg.AddrGRPC), ";") {
+			for _, port := range strings.Split(envfmt(cfg.PortGRPC), ";") {
+				addrs = append(addrs, resolver.Address{Addr: url + port})
+			}
+		}
+		var r = manual.NewBuilderWithScheme("pds")
+		r.InitialState(resolver.State{
+			Addresses: addrs,
+		})
+
+		const serviceConfig = `{"loadBalancingPolicy":"round_robin"}`
+		var address = fmt.Sprintf("%s:///unused", r.Scheme())
+		var options = []grpc.DialOption{
+			grpc.WithInsecure(),
+			grpc.WithBlock(),
+			grpc.WithResolvers(r),
+			grpc.WithDefaultServiceConfig(serviceConfig),
+		}
+
+		log.Printf("grpc connecting on %s\n", address)
 		var ctx, cancel = context.WithCancel(context.Background())
 		go func() {
 			defer cancel()
-			if conn, err = grpc.DialContext(ctx, addrs[0], grpc.WithInsecure(), grpc.WithBlock()); err != nil {
-				log.Fatalf("fail to dial: %v", err)
+			if conn, err = grpc.DialContext(ctx, address, options...); err != nil {
+				log.Fatalf("fail to dial on %s: %v", address, err)
 			}
 			grpcClient = pb.NewPortGuideClient(conn)
 			grpcTool = pb.NewToolGuideClient(conn)
 
-			log.Printf("grpc connected to %s\n", addrs[0])
+			log.Printf("grpc connected on %s\n", address)
 		}()
 		// wait until connect will be established or have got exit signal
 		select {
@@ -130,9 +156,9 @@ func Run(gmux *Router) {
 		<-exitchan
 
 		if err := conn.Close(); err != nil {
-			log.Printf("gRPC disconnect: %v\n", err)
+			log.Printf("grpc disconnect on %s: %v\n", address, err)
 		} else {
-			log.Println("grpc disconnected")
+			log.Printf("grpc disconnected on %s\n", address)
 		}
 	}()
 }

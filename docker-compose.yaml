@@ -26,7 +26,7 @@ services:
         aliases:
           - frontend
     environment:
-      PDSBACKURL: 172.20.1.7:50052
+      PDSBACKURL: 172.20.1.7
     restart: on-failure
     stop_signal: SIGINT
     stop_grace_period: 15s
