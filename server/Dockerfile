@@ -13,6 +13,7 @@ RUN git clone https://github.com/grpc/grpc-go.git ${GOPATH}/src/google.golang.or
     git clone https://github.com/golang/text.git ${GOPATH}/src/golang.org/x/text &&\
     git clone https://github.com/golang/net.git ${GOPATH}/src/golang.org/x/net &&\
     git clone https://github.com/golang/sys.git ${GOPATH}/src/golang.org/x/sys &&\
+    go get -d -v gopkg.in/yaml.v3 &&\
     go get -d -v github.com/gorilla/mux &&\
     git clone https://github.com/schwarzlichtbezirk/pds-grpc.git ${GOPATH}/src/github.com/schwarzlichtbezirk/pds-grpc
 
@@ -37,6 +38,8 @@ FROM ubuntu:latest AS prod
 
 # Copy compiled executables to new image destination.
 COPY --from=build /go/bin/ /go/bin/
+# Copy configuration files.
+COPY --from=build /go/src/github.com/schwarzlichtbezirk/pds-grpc/config/ /go/bin/pds-config/
 
 # gRPC listens ports.
 EXPOSE 50051 50052

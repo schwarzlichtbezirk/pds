@@ -3,13 +3,17 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
 
 	pb "github.com/schwarzlichtbezirk/pds-grpc/pds"
+	"gopkg.in/yaml.v3"
 )
+
+const cfgfile = "client.yaml"
 
 // ConfigPath determines configuration path, depended on what directory is exist.
 var ConfigPath string
@@ -27,18 +31,18 @@ func DetectConfigPath() {
 	}
 	// try to get from config subdirectory on executable path
 	var exepath = filepath.Dir(os.Args[0])
-	path = filepath.Join(exepath, "config")
-	if ok, _ := pathexists(filepath.Join(path, cfg.DataFile)); ok {
+	path = filepath.Join(exepath, "pds-config")
+	if ok, _ := pathexists(path); ok {
 		ConfigPath = path
 		return
 	}
 	// try to find in executable path
-	if ok, _ := pathexists(filepath.Join(exepath, cfg.DataFile)); ok {
+	if ok, _ := pathexists(filepath.Join(exepath, cfgfile)); ok {
 		ConfigPath = exepath
 		return
 	}
 	// try to find in current path
-	if ok, _ := pathexists(cfg.DataFile); ok {
+	if ok, _ := pathexists(cfgfile); ok {
 		ConfigPath = "."
 		return
 	}
@@ -46,14 +50,14 @@ func DetectConfigPath() {
 	// if GOPATH is present
 	if gopath := os.Getenv("GOPATH"); gopath != "" {
 		// try to get from go bin config
-		path = filepath.Join(gopath, "bin/config")
-		if ok, _ := pathexists(filepath.Join(path, cfg.DataFile)); ok {
+		path = filepath.Join(gopath, "bin/pds-config")
+		if ok, _ := pathexists(path); ok {
 			ConfigPath = path
 			return
 		}
 		// try to get from go bin root
 		path = filepath.Join(gopath, "bin")
-		if ok, _ := pathexists(filepath.Join(path, cfg.DataFile)); ok {
+		if ok, _ := pathexists(filepath.Join(path, cfgfile)); ok {
 			ConfigPath = path
 			return
 		}
@@ -67,6 +71,18 @@ func DetectConfigPath() {
 
 	// no config was found
 	log.Fatal("no configuration path was found")
+}
+
+// ReadYaml reads "data" object from YAML-file with given file path.
+func ReadYaml(fname string, data interface{}) (err error) {
+	var body []byte
+	if body, err = ioutil.ReadFile(filepath.Join(ConfigPath, fname)); err != nil {
+		return
+	}
+	if err = yaml.Unmarshal(body, data); err != nil {
+		return
+	}
+	return
 }
 
 // ReadDataFile reads ports.json file step by step,

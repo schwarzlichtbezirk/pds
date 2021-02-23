@@ -24,6 +24,16 @@ func Run() {
 	// inits exit channel
 	exitchan = make(chan struct{})
 
+	// get confiruration path
+	DetectConfigPath()
+	log.Printf("config path: %s\n", ConfigPath)
+
+	// load content of Config structure from YAML-file.
+	if err := ReadYaml(cfgfile, &cfg); err != nil {
+		log.Fatalf("can not read '%s' file: %v\n", cfgfile, err)
+	}
+	log.Printf("loaded '%s'\n", cfgfile)
+
 	// starts gRPC servers
 	for _, addr := range cfg.PortGRPC {
 		var addr = addr // localize

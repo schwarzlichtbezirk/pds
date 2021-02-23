@@ -1,0 +1,6 @@
+# Server configuration file, used in read-only mode on service initialization.
+
+# List of ports of gRPC- services.
+port-grpc:
+  - :50051
+  - :50052

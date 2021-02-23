@@ -38,6 +38,12 @@ func Run(gmux *Router) {
 	DetectConfigPath()
 	log.Printf("config path: %s\n", ConfigPath)
 
+	// load content of Config structure from YAML-file.
+	if err := ReadYaml(cfgfile, &cfg); err != nil {
+		log.Fatalf("can not read '%s' file: %v\n", cfgfile, err)
+	}
+	log.Printf("loaded '%s'\n", cfgfile)
+
 	// check up PDSBACKURL environment variable
 	if os.Getenv("PDSBACKURL") == "" {
 		os.Setenv("PDSBACKURL", "localhost")
