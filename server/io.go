@@ -39,19 +39,16 @@ func DetectConfigPath() {
 	// try to get from config subdirectory on executable path
 	var exepath = filepath.Dir(os.Args[0])
 	path = filepath.Join(exepath, "pds-config")
-	log.Printf("check %s\n", path)
 	if ok, _ := pathexists(path); ok {
 		ConfigPath = path
 		return
 	}
 	// try to find in executable path
-	log.Printf("check %s\n", filepath.Join(exepath, cfgfile))
 	if ok, _ := pathexists(filepath.Join(exepath, cfgfile)); ok {
 		ConfigPath = exepath
 		return
 	}
 	// try to find in current path
-	log.Printf("check %s\n", cfgfile)
 	if ok, _ := pathexists(cfgfile); ok {
 		ConfigPath = "."
 		return

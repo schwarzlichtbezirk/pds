@@ -8,6 +8,7 @@ Client and server test sample with gRPC streaming and REST functionality. Sample
  - domain driven design.
  - single application configuration.
  - safely servers start and graceful shutdown.
+ - runnable at pure host, at standalone containers, at composite bundle.
 
 ## Source code structure
 
@@ -18,7 +19,7 @@ Client and server test sample with gRPC streaming and REST functionality. Sample
  - `config.go`, all settings of application are collected into single structure with single initialization. This singleton can be streamed into JSON or YAML file.
 - `router.go` have a routing for HTTP-server, and some auxiliary functions for HTTP handlers.
 - `handlers.go` contains the list of HTTP handlers and error codes for them.
-- `readfile.go` reads `port.json` file with predefined data format, and sends items step-by-step to gRPC server. File does not limited by size.
+- `io.go` reads settings from configuration file. Reads `port.json` file with predefined data format, and sends items step-by-step to gRPC server. File does not limited by size.
 - `envfmt.go` have helper function to expand environment variables in the file path.
 
 ### server
@@ -27,6 +28,7 @@ Client and server test sample with gRPC streaming and REST functionality. Sample
  - `workflow.go` contains functions for initialization, starts of services, wait for break, and finalization function with graceful shutdown of services.
  - `config.go`, all settings of application are collected into single structure with single initialization. This singleton can be streamed into JSON or YAML file.
  - `grpcserv.go` have gRPC interface implementation for server.
+ - `io.go` reads settings from configuration file.
 
 ### pds
 Here is `pds.proto` with gRPC interface declaration, and files produced by protobuf compiler.
@@ -58,6 +60,7 @@ git clone https://github.com/golang/sys.git %GOPATH%/src/golang.org/x/sys
 go get github.com/schwarzlichtbezirk/grpc-pds
 go install -v github.com/schwarzlichtbezirk/grpc-pds/server
 go install -v github.com/schwarzlichtbezirk/grpc-pds/client
+xcopy %GOPATH%\src\github.com\schwarzlichtbezirk\pds-grpc\config %GOPATH%\bin\pds-config /f /d /i /s /e /k /y
 ```
  5. Run server and then client.
 
@@ -65,7 +68,7 @@ go install -v github.com/schwarzlichtbezirk/grpc-pds/client
 
 Ports thats used at network are defined in configuration of server and client (see files `config.go`).
 
-Server serving on `50051` and `50052` ports by default, and it can be a list for load balancing.
+Server listen on `50051` and `50052` ports by default, and it can be a list for load balancing.
 
 Client creates connection to gRPC server on the same ports. There is used `round_robin` load balancer policy. Host can be defined by environment variable `PDSBACKURL`, and if it not defined or empty, `localhost` is used. Also client opens `8008` port by default to listen for incoming connections to serve REST API, and it can be a list for load balancing.
 
@@ -73,10 +76,12 @@ On localhost server and client can be run as is without any modifications in con
 
 ## How to run in docker
 
-First of all, build docker images.  Dockerfiles does not expects current directory, so images can be built from any path.
+First of all, build docker images.
 ```batch
-docker build --rm -t pds-server %GOPATH%/src/github.com/schwarzlichtbezirk/pds-grpc/server
-docker build --rm -t pds-client %GOPATH%/src/github.com/schwarzlichtbezirk/pds-grpc/client
+cd /d %GOPATH%/src/github.com/schwarzlichtbezirk/pds-grpc/server
+docker build --rm -t pds-server .
+cd /d %GOPATH%/src/github.com/schwarzlichtbezirk/pds-grpc/client
+docker build --rm -t pds-client .
 ```
 
 ### Run standalone containers

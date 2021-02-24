@@ -88,7 +88,7 @@ func ReadYaml(fname string, data interface{}) (err error) {
 // ReadDataFile reads ports.json file step by step,
 // and sends readed ports to gRPC stream.
 func ReadDataFile(fname string) (err error) {
-	log.Printf("read file %s\n", fname)
+	log.Printf("read file '%s'\n", fname)
 
 	var f *os.File
 	if f, err = os.Open(filepath.Join(ConfigPath, fname)); err != nil {
@@ -103,16 +103,17 @@ func ReadDataFile(fname string) (err error) {
 	// inits gRPC stream
 	var stream pb.PortGuide_RecordListClient
 	if stream, err = grpcClient.RecordList(ctx); err != nil {
-		log.Fatalf("%v.RecordList(_) = _, %v", grpcClient, err)
+		return
 	}
 
 	// finally get stream result
 	defer func() {
 		var reply *pb.Summary
 		if reply, err = stream.CloseAndRecv(); err != nil {
-			log.Fatalf("%v.CloseAndRecv() got error %v, want %v", stream, err, nil)
+			return
 		}
-		log.Printf("data file summary: %v", reply)
+		log.Printf("data base summary: readed %d ports, elapsed %dms",
+			reply.PortCount, reply.ElapsedTime)
 	}()
 
 	var dec = json.NewDecoder(f)
@@ -135,7 +136,7 @@ func ReadDataFile(fname string) (err error) {
 			return
 		}
 		if err = stream.Send(&port); err != nil {
-			log.Fatalf("%v.Send(%v) = %v", stream, &port, err)
+			return
 		}
 		if len(port.Coordinates) != 2 {
 			log.Printf("port without coordinates: %s, %s\n", port.Unlocs[0], port.Name)
