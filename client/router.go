@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"runtime"
 	"time"
@@ -83,7 +83,7 @@ func makeServerLabel(label, version string) {
 
 // AjaxGetArg fetch and unmarshal request argument.
 func AjaxGetArg(r *http.Request, arg interface{}) error {
-	if jb, _ := ioutil.ReadAll(r.Body); len(jb) > 0 {
+	if jb, _ := io.ReadAll(r.Body); len(jb) > 0 {
 		if err := json.Unmarshal(jb, arg); err != nil {
 			return &ErrAjax{err, AECbadjson}
 		}

@@ -2,7 +2,7 @@
 # 1 stage. #
 ############
 
-FROM golang:1.15 AS build
+FROM golang:1.16 AS build
 
 # Let's get gRPC and application source code with `golang.org` blocking bypass.
 # Then get application source code with others dependencies.

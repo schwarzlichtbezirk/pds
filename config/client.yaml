@@ -22,7 +22,7 @@ webserver: # See https://golang.org/pkg/net/http/#Server for details.
     shutdown-timeout: 15
 # List of URL or IP-addresses with gRPC- services hosts, divided by semicolons.
 addr-grpc: ${PDSBACKURL}
-# List of ports of gRPC- services, divided by semicolons.
+# List of ports of gRPC-services, divided by semicolons.
 port-grpc: :50051;:50052
 # Name of file with database.
 data-file: ports.json

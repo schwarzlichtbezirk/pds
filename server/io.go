@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -83,7 +82,7 @@ func DetectConfigPath() {
 // ReadYaml reads "data" object from YAML-file with given file path.
 func ReadYaml(fname string, data interface{}) (err error) {
 	var body []byte
-	if body, err = ioutil.ReadFile(filepath.Join(ConfigPath, fname)); err != nil {
+	if body, err = os.ReadFile(filepath.Join(ConfigPath, fname)); err != nil {
 		return
 	}
 	if err = yaml.Unmarshal(body, data); err != nil {

@@ -207,6 +207,9 @@ func Transactions(t *testing.T) {
 	if len(ports.List) > 0 && ports.List[0].Name != "Miami" {
 		t.Error("Miami port not found for 'flor' search")
 	}
+
+	// make exit signal
+	close(exitchan)
 }
 
 func TestGRPC(t *testing.T) {
@@ -214,7 +217,6 @@ func TestGRPC(t *testing.T) {
 	Run()
 	t.Logf("run transactions")
 	Transactions(t)
-	t.Logf("shutting down begin")
-	Shutdown()
+	WaitExit()
 	t.Logf("shutting down complete.")
 }

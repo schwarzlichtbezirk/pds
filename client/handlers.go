@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -61,7 +61,7 @@ var (
 
 func apiToolPing(w http.ResponseWriter, r *http.Request) {
 	var err error
-	var body, _ = ioutil.ReadAll(r.Body)
+	var body, _ = io.ReadAll(r.Body)
 	var ret *pb.Content
 
 	// limit execution time of the action

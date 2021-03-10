@@ -12,8 +12,10 @@ func main() {
 	Run(gmux)
 
 	log.Printf("ready")
-	WaitBreak()
-	log.Println("shutting down begin")
-	Shutdown()
+	go func() {
+		WaitBreak()
+		log.Println("shutting down by break begin")
+	}()
+	WaitExit()
 	log.Println("shutting down complete.")
 }
