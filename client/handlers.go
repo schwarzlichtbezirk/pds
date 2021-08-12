@@ -7,50 +7,50 @@ import (
 	"net/http"
 	"time"
 
-	pb "github.com/schwarzlichtbezirk/pds-grpc/pds"
+	"github.com/schwarzlichtbezirk/pds/pb"
 )
 
 // API error codes.
 // Each error code have unique source code point,
 // so this error code at service reply exactly points to error place.
 const (
-	AECnull    = 0
-	AECbadbody = 1
-	AECnoreq   = 2
-	AECbadjson = 3
+	AECnull = iota
+	AECbadbody
+	AECnoreq
+	AECbadjson
 
 	// api/tool/ping
-	AECtoolpingcallfail = 10
+	AECtoolpingcallfail
 
 	// api/port/set
 
-	AECportsetnodata   = 11
-	AECportsetcallfail = 12
+	AECportsetnodata
+	AECportsetcallfail
 
 	// api/port/get
 
-	AECportgetnodata   = 13
-	AECportgetcallfail = 14
+	AECportgetnodata
+	AECportgetcallfail
 
 	// api/port/name
 
-	AECportnamenodata   = 15
-	AECportnamecallfail = 16
+	AECportnamenodata
+	AECportnamecallfail
 
 	// api/port/near
 
-	AECportnearnodata   = 17
-	AECportnearcallfail = 18
+	AECportnearnodata
+	AECportnearcallfail
 
 	// api/port/circle
 
-	AECportcircnodata   = 19
-	AECportcirccallfail = 20
+	AECportcircnodata
+	AECportcirccallfail
 
 	// api/port/text
 
-	AECportcitynodata   = 21
-	AECportcitycallfail = 22
+	AECportcitynodata
+	AECportcitycallfail
 )
 
 // HTTP error messages

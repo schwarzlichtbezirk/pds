@@ -8,7 +8,7 @@ import (
 	"sync"
 	"syscall"
 
-	pb "github.com/schwarzlichtbezirk/pds-grpc/pds"
+	"github.com/schwarzlichtbezirk/pds/pb"
 	"google.golang.org/grpc"
 )
 

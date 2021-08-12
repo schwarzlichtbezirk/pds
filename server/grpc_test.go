@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	pb "github.com/schwarzlichtbezirk/pds-grpc/pds"
+	"github.com/schwarzlichtbezirk/pds/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 )

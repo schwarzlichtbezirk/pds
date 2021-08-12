@@ -31,38 +31,33 @@ Client and server test sample with gRPC streaming and REST functionality. Sample
  - `io.go` reads settings from configuration file.
 
 ### pds
+
 Here is `pds.proto` with gRPC interface declaration, and files produced by protobuf compiler.
 
-## How to build
+## How to run on localhost
 
- 1. At first, install [Golang](https://golang.org/) minimum 1.13 version, or latest. Requires that [GOPATH is set](https://golang.org/doc/code.html#GOPATH).
- 2. [Download](https://github.com/protocolbuffers/protobuf/blob/master/README.md#protocol-compiler-installation) and install protocol buffer compiler.
- 3. Fetch golang `grpc` library and compile protocol buffer compiler plugins.
+1. First of all install [Golang](https://golang.org/) of last version. Requires that [GOPATH is set](https://golang.org/doc/code.html#GOPATH).
+
+2. Fetch golang `grpc` library.
 ```batch
 go get -u google.golang.org/grpc
-go get -u google.golang.org/protobuf
-go get -u google.golang.org/genproto
-go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
-go install google.golang.org/protobuf/cmd/protoc-gen-go
 ```
-Another way to get `grpc` source code and its dependencies if there is no access to `golang.org` is git repositories cloning:
+Note: if there is no access to `golang.org` host, use VPN (via Netherlands/USA) or git repositories cloning.
+
+3. Fetch this source code and compile application.
 ```batch
-git clone https://github.com/grpc/grpc-go.git %GOPATH%/src/google.golang.org/grpc
-git clone https://github.com/protocolbuffers/protobuf-go.git %GOPATH%/src/google.golang.org/protobuf
-git clone https://github.com/googleapis/go-genproto.git %GOPATH%/src/google.golang.org/genproto
-git clone https://github.com/golang/protobuf.git %GOPATH%/src/github.com/golang/protobuf
-git clone https://github.com/golang/text.git %GOPATH%/src/golang.org/x/text
-git clone https://github.com/golang/net.git %GOPATH%/src/golang.org/x/net
-git clone https://github.com/golang/sys.git %GOPATH%/src/golang.org/x/sys
+go get github.com/schwarzlichtbezirk/pds
 ```
- 4. Fetch this source code and compile application.
+Folder `github.com\schwarzlichtbezirk\pds\tool` contains batch helpers to compile services for Windows for x86 and amd64 platforms.
+
+4. Edit config-files `github.com/schwarzlichtbezirk/pds/config/client.yaml` and `github.com/schwarzlichtbezirk/pds/config/server.yaml`.
+
+5. Run services.
 ```batch
-go get github.com/schwarzlichtbezirk/grpc-pds
-go install -v github.com/schwarzlichtbezirk/grpc-pds/server
-go install -v github.com/schwarzlichtbezirk/grpc-pds/client
-xcopy %GOPATH%\src\github.com\schwarzlichtbezirk\pds-grpc\config %GOPATH%\bin\pds-config /f /d /i /s /e /k /y
+start "PDS server" %GOPATH%/bin/pds.server.x64.exe
+start "PDS client" %GOPATH%/bin/pds.client.x64.exe
 ```
- 5. Run server and then client.
+or run `github.com\schwarzlichtbezirk\pds\tool\start.x64.cmd` batch-file to start composition of client and server.
 
 ## Connections
 
@@ -70,18 +65,26 @@ Ports thats used at network are defined in configuration of server and client (s
 
 Server listen on `50051` and `50052` ports by default, and it can be a list for load balancing.
 
-Client creates connection to gRPC server on the same ports. There is used `round_robin` load balancer policy. Host can be defined by environment variable `PDSBACKURL`, and if it not defined or empty, `localhost` is used. Also client opens `8008` port by default to listen for incoming connections to serve REST API, and it can be a list for load balancing.
+Client creates connection to gRPC server on the same ports. There is used `round_robin` load balancer policy. Host can be defined by environment variable `PDSSERVURL`, and if it not defined or empty, `localhost` is used. Also client opens `8008` port by default to listen for incoming connections to serve REST API, and it can be a list for load balancing.
 
 On localhost server and client can be run as is without any modifications in configuration.
 
 ## How to run in docker
 
-First of all, build docker images.
+1. Change current directory to project root.
 ```batch
-cd /d %GOPATH%/src/github.com/schwarzlichtbezirk/pds-grpc/server
-docker build --rm -t pds-server .
-cd /d %GOPATH%/src/github.com/schwarzlichtbezirk/pds-grpc/client
-docker build --rm -t pds-client .
+cd /d %GOPATH%/src/github.com/schwarzlichtbezirk/dfs
+```
+
+2. Build docker images for `server` and for `client` services.
+```batch
+docker build --pull --rm -f "Dockerfile.server" -t dfs-server:latest "."
+docker build --pull --rm -f "Dockerfile.client" -t dfs-client:latest "."
+```
+
+3. Then run docker compose file.
+```batch
+docker-compose -f "docker-compose.yaml" up -d --build
 ```
 
 ### Run standalone containers
@@ -93,12 +96,23 @@ docker network create -d bridge --subnet 172.20.0.0/16 pds-net
 Then it should be run containers on `pds-net` network.
 ```batch
 docker run --rm -d -p 50051:50051 -p 50052:50052 --network=pds-net --ip=172.20.1.7 --name server pds-server
-docker run --rm -d -p 8008:8008 --network=pds-net --ip=172.20.1.8 -e PDSBACKURL="172.20.1.7" --name client pds-client
+docker run --rm -d -p 8008:8008 --network=pds-net --ip=172.20.1.8 -e PDSSERVURL="172.20.1.7" --name client pds-client
 ```
 
 ### Run by docker compose file
 
 Docker compose file uses already builded images and creates internal network for containers.
+
+## What its need else to modify code
+
+If you want to modify `.go`-code and `.proto` file, you should [download](https://github.com/protocolbuffers/protobuf/blob/master/README.md#protocol-compiler-installation) and install protocol buffer compiler. Then fetch and compile protocol buffer compiler plugins:
+```batch
+go get -u google.golang.org/protobuf
+go get -u google.golang.org/genproto
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
+go install google.golang.org/protobuf/cmd/protoc-gen-go
+```
+To generate protocol buffer code, run `tool/pb.cmd` batch file.
 
 ## REST API
 

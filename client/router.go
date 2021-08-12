@@ -44,20 +44,6 @@ func (e *ErrAjax) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// RegisterRoutes puts application routes to given router.
-func RegisterRoutes(gmux *Router) {
-	// API routes
-	var tool = gmux.PathPrefix("/api/tool").Subrouter()
-	tool.Path("/ping").HandlerFunc(apiToolPing)
-	var port = gmux.PathPrefix("/api/port").Subrouter()
-	port.Path("/set").HandlerFunc(apiPortSet)
-	port.Path("/get").HandlerFunc(apiPortGet)
-	port.Path("/name").HandlerFunc(apiPortName)
-	port.Path("/near").HandlerFunc(apiPortNear)
-	port.Path("/circle").HandlerFunc(apiPortCircle)
-	port.Path("/text").HandlerFunc(apiPortText)
-}
-
 // UnixJS converts time to UNIX-time in milliseconds, compatible with javascript time format.
 func UnixJS(u time.Time) int64 {
 	return u.UnixNano() / 1000000
@@ -157,4 +143,18 @@ func WriteError400(w http.ResponseWriter, err error, code int) {
 // WriteError500 puts to response 500 status code and ErrAjax formed by given error object.
 func WriteError500(w http.ResponseWriter, err error, code int) {
 	WriteJSON(w, http.StatusInternalServerError, &ErrAjax{err, code})
+}
+
+// RegisterRoutes puts application routes to given router.
+func RegisterRoutes(gmux *Router) {
+	// API routes
+	var tool = gmux.PathPrefix("/api/tool").Subrouter()
+	tool.Path("/ping").HandlerFunc(apiToolPing)
+	var port = gmux.PathPrefix("/api/port").Subrouter()
+	port.Path("/set").HandlerFunc(apiPortSet)
+	port.Path("/get").HandlerFunc(apiPortGet)
+	port.Path("/name").HandlerFunc(apiPortName)
+	port.Path("/near").HandlerFunc(apiPortNear)
+	port.Path("/circle").HandlerFunc(apiPortCircle)
+	port.Path("/text").HandlerFunc(apiPortText)
 }

@@ -68,7 +68,7 @@ func DetectConfigPath() {
 			return
 		}
 		// try to get from source code
-		path = filepath.Join(gopath, "src/github.com/schwarzlichtbezirk/pds-grpc/config")
+		path = filepath.Join(gopath, "src/github.com/schwarzlichtbezirk/pds/config")
 		if ok, _ := pathexists(path); ok {
 			ConfigPath = path
 			return

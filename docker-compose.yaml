@@ -1,6 +1,13 @@
+# Build images by followed commands and run composition:
+#    docker build --pull --rm -f "Dockerfile.server" -t dfs-server:latest "."
+#    docker build --pull --rm -f "Dockerfile.client" -t dfs-client:latest "."
+#    docker-compose -f "docker-compose.yaml" up -d --build
+
+version: "3.9"
+
 services:
 
-  server:
+  server-svc:
     image: pds-server
     ports:
       - 50051:50051
@@ -14,10 +21,10 @@ services:
     stop_signal: SIGINT
     stop_grace_period: 15s
 
-  client:
+  client-svc:
     image: pds-client
     depends_on:
-      - server
+      - server-svc
     ports:
       - 8008:8008
     networks:
@@ -26,13 +33,14 @@ services:
         aliases:
           - frontend
     environment:
-      PDSBACKURL: 172.20.1.7
+      PDSSERVURL: 172.20.1.7
     restart: on-failure
     stop_signal: SIGINT
     stop_grace_period: 15s
 
 networks:
   pds-net:
+    name: pds-net
     external: false
     ipam:
       driver: default

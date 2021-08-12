@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	pb "github.com/schwarzlichtbezirk/pds-grpc/pds"
+	"github.com/schwarzlichtbezirk/pds/pb"
 )
 
 // Storage is singleton, PDS database

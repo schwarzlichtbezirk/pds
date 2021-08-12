@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "github.com/schwarzlichtbezirk/pds-grpc/pds";
+option go_package = "github.com/schwarzlichtbezirk/pds/pb";
 
 package pds;
 

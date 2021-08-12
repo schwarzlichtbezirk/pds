@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	pb "github.com/schwarzlichtbezirk/pds-grpc/pds"
+	"github.com/schwarzlichtbezirk/pds/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/resolver"
 	"google.golang.org/grpc/resolver/manual"
@@ -44,9 +44,9 @@ func Run(gmux *Router) {
 	}
 	log.Printf("loaded '%s'\n", cfgfile)
 
-	// check up PDSBACKURL environment variable
-	if os.Getenv("PDSBACKURL") == "" {
-		os.Setenv("PDSBACKURL", "localhost")
+	// check up PDSSERVURL environment variable
+	if os.Getenv("PDSSERVURL") == "" {
+		os.Setenv("PDSSERVURL", "localhost")
 	}
 
 	// inits exit channel

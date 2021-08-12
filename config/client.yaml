@@ -5,23 +5,21 @@ webserver: # See https://golang.org/pkg/net/http/#Server for details.
     # Address is skipped in most common cases, port only remains.
     port-http:
         - :8008
-    # Maximum duration for reading the entire request, including the body,
-    # in seconds.
-    read-timeout: 15
-    # Amount of time allowed to read request headers, in seconds.
-    read-header-timeout: 15
-    # Maximum duration before timing out writes of the response, in seconds.
-    write-timeout: 15
-    # Maximum amount of time to wait for the next request when keep-alives
-    # are enabled, in seconds.
-    idle-timeout: 60
+    # Maximum duration for reading the entire request, including the body.
+    read-timeout: 15s
+    # Amount of time allowed to read request headers.
+    read-header-timeout: 15s
+    # Maximum duration before timing out writes of the response.
+    write-timeout: 15s
+    # Maximum amount of time to wait for the next request when keep-alives are enabled.
+    idle-timeout: 60s
     # Controls the maximum number of bytes the server will read parsing
     # the request header's keys and values, including the request line, in bytes.
     max-header-bytes: 1048576 # 1M
-    # Maximum duration to wait for graceful shutdown, in seconds.
-    shutdown-timeout: 15
+    # Maximum duration to wait for graceful shutdown.
+    shutdown-timeout: 15s
 # List of URL or IP-addresses with gRPC- services hosts, divided by semicolons.
-addr-grpc: ${PDSBACKURL}
+addr-grpc: ${PDSSERVURL}
 # List of ports of gRPC-services, divided by semicolons.
 port-grpc: :50051;:50052
 # Name of file with database.
