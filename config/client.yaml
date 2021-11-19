@@ -19,7 +19,7 @@ webserver: # See https://golang.org/pkg/net/http/#Server for details.
     # Maximum duration to wait for graceful shutdown.
     shutdown-timeout: 15s
 # List of URL or IP-addresses with gRPC- services hosts, divided by semicolons.
-addr-grpc: ${PDSSERVURL}
+addr-grpc: ${SERVERURL}
 # List of ports of gRPC-services, divided by semicolons.
 port-grpc: :50051;:50052
 # Name of file with database.

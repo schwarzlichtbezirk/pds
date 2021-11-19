@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"log"
@@ -21,15 +21,19 @@ var (
 
 // Run launches server listeners.
 func Run() {
+	var err error
+
 	// inits exit channel
 	exitchan = make(chan struct{})
 
 	// get confiruration path
-	DetectConfigPath()
+	if ConfigPath, err = DetectConfigPath(); err != nil {
+		log.Fatal(err)
+	}
 	log.Printf("config path: %s\n", ConfigPath)
 
 	// load content of Config structure from YAML-file.
-	if err := ReadYaml(cfgfile, &cfg); err != nil {
+	if err = ReadYaml(cfgfile, &cfg); err != nil {
 		log.Fatalf("can not read '%s' file: %v\n", cfgfile, err)
 	}
 	log.Printf("loaded '%s'\n", cfgfile)

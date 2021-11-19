@@ -32,10 +32,12 @@ var (
 
 // Run launches server listeners.
 func Run(gmux *Router) {
-	makeServerLabel("gRPC-PDS", "0.1.0")
+	var err error
 
 	// get confiruration path
-	DetectConfigPath()
+	if ConfigPath, err = DetectConfigPath(); err != nil {
+		log.Fatal(err)
+	}
 	log.Printf("config path: %s\n", ConfigPath)
 
 	// load content of Config structure from YAML-file.
@@ -44,9 +46,9 @@ func Run(gmux *Router) {
 	}
 	log.Printf("loaded '%s'\n", cfgfile)
 
-	// check up PDSSERVURL environment variable
-	if os.Getenv("PDSSERVURL") == "" {
-		os.Setenv("PDSSERVURL", "localhost")
+	// check up SERVERURL environment variable
+	if os.Getenv("SERVERURL") == "" {
+		os.Setenv("SERVERURL", "localhost")
 	}
 
 	// inits exit channel
