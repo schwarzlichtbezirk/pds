@@ -85,6 +85,8 @@ var origPort = []*pb.Port{
 var dubai = origPort[0]
 
 func Transactions(t *testing.T) {
+	t.Logf("run transactions")
+
 	var (
 		err        error
 		grpcConn   *grpc.ClientConn
@@ -209,14 +211,12 @@ func Transactions(t *testing.T) {
 	}
 
 	// make exit signal
-	close(exitchan)
+	exitfn()
 }
 
 func TestGRPC(t *testing.T) {
-	t.Logf("starts")
+	Init()
 	Run()
-	t.Logf("run transactions")
 	Transactions(t)
-	WaitExit()
-	t.Logf("shutting down complete.")
+	Done()
 }

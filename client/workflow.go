@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,8 +21,9 @@ import (
 )
 
 var (
-	// channel to indicate about server shutdown
-	exitchan chan struct{}
+	// context to indicate about service shutdown
+	exitctx context.Context
+	exitfn  context.CancelFunc
 	// wait group for all server goroutines
 	exitwg sync.WaitGroup
 )
@@ -30,8 +33,43 @@ var (
 	grpcTool   pb.ToolGuideClient
 )
 
-// Run launches server listeners.
-func Run(gmux *Router) {
+// Init performs global data initialisation.
+func Init() {
+	log.Println("starts")
+
+	flag.Parse()
+
+	// create context and wait the break
+	exitctx, exitfn = context.WithCancel(context.Background())
+	go func() {
+		// Make exit signal on function exit.
+		defer exitfn()
+
+		var sigint = make(chan os.Signal, 1)
+		var sigterm = make(chan os.Signal, 1)
+		// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C) or SIGTERM (Ctrl+/)
+		// SIGKILL, SIGQUIT will not be caught.
+		signal.Notify(sigint, syscall.SIGINT)
+		signal.Notify(sigterm, syscall.SIGTERM)
+		// Block until we receive our signal.
+		select {
+		case <-exitctx.Done():
+			if errors.Is(exitctx.Err(), context.DeadlineExceeded) {
+				log.Println("shutting down by timeout")
+			} else if errors.Is(exitctx.Err(), context.Canceled) {
+				log.Println("shutting down by cancel")
+			} else {
+				log.Printf("shutting down by %s", exitctx.Err().Error())
+			}
+		case <-sigint:
+			log.Println("shutting down by break")
+		case <-sigterm:
+			log.Println("shutting down by process termination")
+		}
+		signal.Stop(sigint)
+		signal.Stop(sigterm)
+	}()
+
 	var err error
 
 	// get confiruration path
@@ -41,7 +79,7 @@ func Run(gmux *Router) {
 	log.Printf("config path: %s\n", ConfigPath)
 
 	// load content of Config structure from YAML-file.
-	if err := ReadYaml(cfgfile, &cfg); err != nil {
+	if err = ReadYaml(cfgfile, &cfg); err != nil {
 		log.Fatalf("can not read '%s' file: %v\n", cfgfile, err)
 	}
 	log.Printf("loaded '%s'\n", cfgfile)
@@ -50,10 +88,10 @@ func Run(gmux *Router) {
 	if os.Getenv("SERVERURL") == "" {
 		os.Setenv("SERVERURL", "localhost")
 	}
+}
 
-	// inits exit channel
-	exitchan = make(chan struct{})
-
+// Run launches server listeners.
+func Run(gmux *Router) {
 	// helps to start HTTP only after gRPC to prevent call to uninitialized data
 	var grpcready = make(chan struct{})
 
@@ -78,7 +116,7 @@ func Run(gmux *Router) {
 				// or until exit is signaled
 				select {
 				case <-grpcready:
-				case <-exitchan:
+				case <-exitctx.Done():
 					return
 				}
 				log.Printf("start http on %s\n", addr)
@@ -88,7 +126,7 @@ func Run(gmux *Router) {
 			}()
 
 			// wait for exit signal
-			<-exitchan
+			<-exitctx.Done()
 
 			// create a deadline to wait for.
 			var ctx, cancel = context.WithTimeout(
@@ -148,7 +186,7 @@ func Run(gmux *Router) {
 		// wait until connect will be established or have got exit signal
 		select {
 		case <-ctx.Done():
-		case <-exitchan:
+		case <-exitctx.Done():
 			cancel()
 			return
 		}
@@ -161,7 +199,7 @@ func Run(gmux *Router) {
 		close(grpcready)
 
 		// wait for exit signal
-		<-exitchan
+		<-exitctx.Done()
 
 		if err := conn.Close(); err != nil {
 			log.Printf("grpc disconnect on %s: %v\n", address, err)
@@ -169,23 +207,16 @@ func Run(gmux *Router) {
 			log.Printf("grpc disconnected on %s\n", address)
 		}
 	}()
+
+	log.Printf("ready")
 }
 
-// WaitBreak blocks goroutine until Ctrl+C will be pressed.
-func WaitBreak() {
-	var sigint = make(chan os.Signal, 1)
-	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C) or SIGTERM (Ctrl+/)
-	// SIGKILL, SIGQUIT will not be caught.
-	signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-
-	// Block until we receive our signal.
-	<-sigint
-	// Make exit signal.
-	close(exitchan)
-}
-
-// WaitExit performs graceful network shutdown,
+// Done performs graceful network shutdown,
 // waits until all server threads will be stopped.
-func WaitExit() {
+func Done() {
+	// wait for exit signal
+	<-exitctx.Done()
+	// wait until all server threads will be stopped.
 	exitwg.Wait()
+	log.Println("shutting down complete.")
 }

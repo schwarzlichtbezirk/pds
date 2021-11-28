@@ -49,10 +49,14 @@ var cfg = Config{ // inits default values:
 }
 
 const (
+	cfgenv  = "CONFIGPATH"
 	cfgfile = "client.yaml"
 	cfgbase = "pds-config"
 	srcpath = "src/github.com/schwarzlichtbezirk/pds/config"
 )
+
+// Path given from command line parameter.
+var cmdpath = flag.String("d", "", "configuration path")
 
 // ConfigPath determines configuration path, depended on what directory is exist.
 var ConfigPath string
@@ -66,7 +70,7 @@ func DetectConfigPath() (cfgpath string, err error) {
 	var exepath = filepath.Dir(os.Args[0])
 
 	// try to get from environment setting
-	if path = envfmt(os.Getenv("CONFIGPATH")); path != "" {
+	if path = envfmt(os.Getenv(cfgenv)); path != "" {
 		// try to get access to full path
 		if ok, _ := pathexists(filepath.Join(path, cfgfile)); ok {
 			cfgpath = path
@@ -82,7 +86,7 @@ func DetectConfigPath() (cfgpath string, err error) {
 	}
 
 	// try to get from command path arguments
-	if path = *flag.String("d", "", "configuration path"); path != "" {
+	if path = *cmdpath; path != "" {
 		// try to get access to full path
 		if ok, _ := pathexists(filepath.Join(path, cfgfile)); ok {
 			cfgpath = path
