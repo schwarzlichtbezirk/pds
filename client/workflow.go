@@ -33,7 +33,7 @@ var (
 	grpcTool   pb.ToolGuideClient
 )
 
-// Init performs global data initialisation.
+// Init performs global data initialization.
 func Init() {
 	log.Println("starts")
 

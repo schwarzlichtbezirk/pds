@@ -1,0 +1,67 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "client build",
+			"group": "build",
+			"linux": {
+				"command": "go",
+				"args": [
+					"build",
+					"-o",
+					"${env:GOPATH}/bin/pds.client.x64",
+					"-v",
+					"./client"
+				],
+			},
+			"windows": {
+				"command": "go",
+				"args": [
+					"build",
+					"-o",
+					"${env:GOPATH}/bin/pds.client.x64.exe",
+					"-v",
+					"./client"
+				]
+			},
+			"options": {
+				"cwd": "${workspaceFolder}"
+			}
+		},
+		{
+			"label": "server build",
+			"group": "build",
+			"linux": {
+				"command": "go",
+				"args": [
+					"build",
+					"-o",
+					"{env:GOPATH}/bin/pds.server.x64",
+					"-v",
+					"./server"
+				],
+			},
+			"windows": {
+				"command": "go",
+				"args": [
+					"build",
+					"-o",
+					"${env:GOPATH}/bin/pds.server.x64.exe",
+					"-v",
+					"./server"
+				]
+			},
+			"options": {
+				"cwd": "${workspaceFolder}"
+			}
+		},
+		{
+			"label": "build all",
+			"group": "build",
+			"dependsOn": [
+				"client build",
+				"server build"
+			]
+		}
+	]
+}
