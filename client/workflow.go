@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jessevdk/go-flags"
 	"github.com/schwarzlichtbezirk/pds/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/resolver"
@@ -36,8 +36,6 @@ var (
 // Init performs global data initialization.
 func Init() {
 	log.Println("starts")
-
-	flag.Parse()
 
 	// create context and wait the break
 	exitctx, exitfn = context.WithCancel(context.Background())
@@ -70,24 +68,27 @@ func Init() {
 		signal.Stop(sigterm)
 	}()
 
-	var err error
-
-	// get confiruration path
-	if ConfigPath, err = DetectConfigPath(); err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("config path: %s\n", ConfigPath)
-
 	// load content of Config structure from YAML-file.
-	if err = ReadYaml(cfgfile, &cfg); err != nil {
-		log.Fatalf("can not read '%s' file: %v\n", cfgfile, err)
-	}
-	log.Printf("loaded '%s'\n", cfgfile)
+	if !cfg.NoConfig {
+		var err error
 
-	// check up SERVERURL environment variable
-	if os.Getenv("SERVERURL") == "" {
-		os.Setenv("SERVERURL", "localhost")
+		// get confiruration path
+		if ConfigPath, err = DetectConfigPath(); err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("config path: %s\n", ConfigPath)
+
+		if err = ReadYaml(cfgfile, &cfg); err != nil {
+			log.Fatalf("can not read '%s' file: %v\n", cfgfile, err)
+		}
+		log.Printf("loaded '%s'\n", cfgfile)
+		// second iteration, rewrite settings from config file
+		if _, err = flags.NewParser(&cfg, flags.PassDoubleDash).Parse(); err != nil {
+			panic("no way to here")
+		}
 	}
+	// correct config
+	cfg.AddrGRPC = envfmt(cfg.AddrGRPC)
 }
 
 // Run launches server listeners.

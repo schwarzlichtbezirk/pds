@@ -1,4 +1,3 @@
 @echo off
-cd /d %GOPATH%/bin/
-start "server" pds.server.x86.exe
-start "client" pds.client.x86.exe
+start "server" %GOPATH%/bin/pds.server.x86.exe
+start "client" %GOPATH%/bin/pds.client.x86.exe

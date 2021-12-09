@@ -1,5 +1,8 @@
 # Client configuration file, used in read-only mode on service initialization.
 
+command-line:
+    # Name of file with database.
+    data-file: ports.json
 webserver: # See https://golang.org/pkg/net/http/#Server for details.
     # List of address:port values for non-encrypted connections.
     # Address is skipped in most common cases, port only remains.
@@ -18,9 +21,8 @@ webserver: # See https://golang.org/pkg/net/http/#Server for details.
     max-header-bytes: 1048576 # 1M
     # Maximum duration to wait for graceful shutdown.
     shutdown-timeout: 15s
-# List of URL or IP-addresses with gRPC- services hosts, divided by semicolons.
-addr-grpc: ${SERVERURL}
-# List of ports of gRPC-services, divided by semicolons.
-port-grpc: :50051;:50052
-# Name of file with database.
-data-file: ports.json
+grpcserver:
+    # List of URL or IP-addresses with gRPC- services hosts, divided by semicolons.
+    addr-grpc: $SERVERURL
+    # List of ports of gRPC-services, divided by semicolons.
+    port-grpc: :50051;:50052

@@ -37,7 +37,7 @@ FROM gcr.io/distroless/base-debian11
 # Copy compiled executables to new image destination.
 COPY --from=build /go/bin/client /go/bin/client
 # Copy configuration files.
-COPY --from=build /go/src/github.com/schwarzlichtbezirk/pds/config/*.* /go/bin/pds-config/
+COPY --from=build /go/src/github.com/schwarzlichtbezirk/pds/config/* /go/bin/pds-config/
 
 # Open REST listen port.
 EXPOSE 8008

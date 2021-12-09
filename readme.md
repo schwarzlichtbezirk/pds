@@ -54,7 +54,7 @@ Note: if there is no access to `golang.org` host, use VPN (via Netherlands/USA) 
 go get github.com/schwarzlichtbezirk/pds
 ```
 
-Folder `github.com\schwarzlichtbezirk\pds\tool` contains batch helpers to compile services for Windows for x86 and amd64 platforms.
+Folder `github.com\schwarzlichtbezirk\pds\tool` contains batch helpers to compile services for Windows for x86 and amd64 platforms. Also it has shell-scripts to compile for Linux amd64 platforms.
 
 4. Edit config-files `github.com/schwarzlichtbezirk/pds/config/client.yaml` and `github.com/schwarzlichtbezirk/pds/config/server.yaml`.
 
