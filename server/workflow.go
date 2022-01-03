@@ -81,39 +81,54 @@ func Init() {
 
 // Run launches server listeners.
 func Run() {
+	var grpcctx, grpccancel = context.WithCancel(context.Background())
+
 	// starts gRPC servers
-	for _, addr := range cfg.PortGRPC {
-		var addr = addr // localize
-		exitwg.Add(1)
-		go func() {
-			defer exitwg.Done()
-
-			var err error
-			var lis net.Listener
-
-			log.Printf("grpc server %s starts\n", addr)
-			if lis, err = net.Listen("tcp", addr); err != nil {
-				log.Fatalf("failed to listen: %v", err)
-			}
-			var server = grpc.NewServer()
-			pb.RegisterToolGuideServer(server, &routeToolGuideServer{addr: addr})
-			pb.RegisterPortGuideServer(server, &routePortGuideServer{addr: addr})
+	func() {
+		var grpcwg sync.WaitGroup
+		for _, addr := range cfg.PortGRPC {
+			var addr = addr // localize
+			grpcwg.Add(1)
+			exitwg.Add(1)
 			go func() {
-				if err = server.Serve(lis); err != nil {
-					log.Fatalf("failed to serve: %v", err)
+				defer exitwg.Done()
+
+				var err error
+				var lis net.Listener
+
+				log.Printf("grpc server %s starts\n", addr)
+				if lis, err = net.Listen("tcp", addr); err != nil {
+					log.Fatalf("failed to listen: %v", err)
 				}
+				var server = grpc.NewServer()
+				pb.RegisterToolGuideServer(server, &routeToolGuideServer{addr: addr})
+				pb.RegisterPortGuideServer(server, &routePortGuideServer{addr: addr})
+				go func() {
+					grpcwg.Done()
+					if err = server.Serve(lis); err != nil {
+						log.Fatalf("failed to serve: %v", err)
+					}
+				}()
+
+				// wait for exit signal
+				<-exitctx.Done()
+
+				server.GracefulStop()
+
+				log.Printf("grpc server %s closed\n", addr)
 			}()
+		}
 
-			// wait for exit signal
-			<-exitctx.Done()
+		grpcwg.Wait()
+		grpccancel()
+	}()
 
-			server.GracefulStop()
-
-			log.Printf("grpc server %s closed\n", addr)
-		}()
+	select {
+	case <-grpcctx.Done():
+		log.Printf("grpc ready")
+	case <-exitctx.Done():
+		return
 	}
-
-	log.Println("ready")
 }
 
 // Done performs graceful network shutdown,

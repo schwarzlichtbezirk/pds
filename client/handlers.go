@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/schwarzlichtbezirk/pds/pb"
 )
@@ -18,6 +17,7 @@ const (
 	AECbadbody
 	AECnoreq
 	AECbadjson
+	AECpanic
 
 	// api/tool/ping
 	AECtoolpingcallfail
@@ -65,7 +65,7 @@ func apiToolPing(w http.ResponseWriter, r *http.Request) {
 	var ret *pb.Content
 
 	// limit execution time of the action
-	var ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+	var ctx, cancel = context.WithTimeout(context.Background(), cfg.ApiTimeout)
 	defer cancel()
 
 	// make rpc call
@@ -85,8 +85,7 @@ func apiPortSet(w http.ResponseWriter, r *http.Request) {
 	var ret *pb.Key
 
 	// get arguments
-	if err = AjaxGetArg(r, &arg); err != nil {
-		WriteJSON(w, http.StatusBadRequest, err)
+	if err = AjaxGetArg(w, r, &arg); err != nil {
 		return
 	}
 	if arg.Name == "" || len(arg.Unlocs) == 0 {
@@ -95,7 +94,7 @@ func apiPortSet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// limit execution time of the action
-	var ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+	var ctx, cancel = context.WithTimeout(context.Background(), cfg.ApiTimeout)
 	defer cancel()
 
 	// make rpc call
@@ -113,8 +112,7 @@ func apiPortGet(w http.ResponseWriter, r *http.Request) {
 	var ret *pb.Port
 
 	// get arguments
-	if err = AjaxGetArg(r, &arg); err != nil {
-		WriteJSON(w, http.StatusBadRequest, err)
+	if err = AjaxGetArg(w, r, &arg); err != nil {
 		return
 	}
 	if arg.Value == "" {
@@ -123,7 +121,7 @@ func apiPortGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// limit execution time of the action
-	var ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+	var ctx, cancel = context.WithTimeout(context.Background(), cfg.ApiTimeout)
 	defer cancel()
 
 	// make rpc call
@@ -141,8 +139,7 @@ func apiPortName(w http.ResponseWriter, r *http.Request) {
 	var ret *pb.Port
 
 	// get arguments
-	if err = AjaxGetArg(r, &arg); err != nil {
-		WriteJSON(w, http.StatusBadRequest, err)
+	if err = AjaxGetArg(w, r, &arg); err != nil {
 		return
 	}
 	if arg.Value == "" {
@@ -151,7 +148,7 @@ func apiPortName(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// limit execution time of the action
-	var ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+	var ctx, cancel = context.WithTimeout(context.Background(), cfg.ApiTimeout)
 	defer cancel()
 
 	// make rpc call
@@ -169,8 +166,7 @@ func apiPortNear(w http.ResponseWriter, r *http.Request) {
 	var ret *pb.Port
 
 	// get arguments
-	if err = AjaxGetArg(r, &arg); err != nil {
-		WriteJSON(w, http.StatusBadRequest, err)
+	if err = AjaxGetArg(w, r, &arg); err != nil {
 		return
 	}
 	if arg.Latitude == 0 && arg.Longitude == 0 {
@@ -179,7 +175,7 @@ func apiPortNear(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// limit execution time of the action
-	var ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+	var ctx, cancel = context.WithTimeout(context.Background(), cfg.ApiTimeout)
 	defer cancel()
 
 	// make rpc call
@@ -197,8 +193,7 @@ func apiPortCircle(w http.ResponseWriter, r *http.Request) {
 	var ret *pb.Ports
 
 	// get arguments
-	if err = AjaxGetArg(r, &arg); err != nil {
-		WriteJSON(w, http.StatusBadRequest, err)
+	if err = AjaxGetArg(w, r, &arg); err != nil {
 		return
 	}
 	if (arg.Center.Latitude == 0 && arg.Center.Longitude == 0) || arg.Radius <= 0 {
@@ -207,7 +202,7 @@ func apiPortCircle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// limit execution time of the action
-	var ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+	var ctx, cancel = context.WithTimeout(context.Background(), cfg.ApiTimeout)
 	defer cancel()
 
 	// make rpc call
@@ -225,8 +220,7 @@ func apiPortText(w http.ResponseWriter, r *http.Request) {
 	var ret *pb.Ports
 
 	// get arguments
-	if err = AjaxGetArg(r, &arg); err != nil {
-		WriteJSON(w, http.StatusBadRequest, err)
+	if err = AjaxGetArg(w, r, &arg); err != nil {
 		return
 	}
 	if arg.Value == "" {
@@ -235,7 +229,7 @@ func apiPortText(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// limit execution time of the action
-	var ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+	var ctx, cancel = context.WithTimeout(context.Background(), cfg.ApiTimeout)
 	defer cancel()
 
 	// make rpc call

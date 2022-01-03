@@ -31,8 +31,9 @@ type CfgWebServ struct {
 }
 
 type CfgRpcServ struct {
-	AddrGRPC string `json:"addr-grpc" yaml:"addr-grpc" env:"SERVERURL" short:"u" long:"url" description:"List of URL or IP-addresses with gRPC- services hosts."`
-	PortGRPC string `json:"port-grpc" yaml:"port-grpc" env:"PORTGRPC" env-delim:";" short:"p" long:"portgrpc" description:"List of ports of gRPC-services."`
+	AddrGRPC   string        `json:"addr-grpc" yaml:"addr-grpc" env:"SERVERURL" short:"u" long:"url" description:"List of URL or IP-addresses with gRPC- services hosts."`
+	PortGRPC   string        `json:"port-grpc" yaml:"port-grpc" env:"PORTGRPC" env-delim:";" short:"p" long:"portgrpc" description:"List of ports of gRPC-services."`
+	ApiTimeout time.Duration `json:"api-timeout" yaml:"api-timeout"`
 }
 
 // Config is common service settings.
@@ -57,8 +58,9 @@ var cfg = Config{ // inits default values:
 		ShutdownTimeout:   time.Duration(15) * time.Second,
 	},
 	CfgRpcServ: CfgRpcServ{
-		AddrGRPC: "localhost",
-		PortGRPC: ":50051;:50052",
+		AddrGRPC:   "localhost",
+		PortGRPC:   ":50051;:50052",
+		ApiTimeout: 2 * time.Second,
 	},
 }
 

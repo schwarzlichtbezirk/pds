@@ -1,5 +1,6 @@
 @echo off
-set pbsrc=%GOPATH%/src
-set pbpkg=github.com/schwarzlichtbezirk/pds/pb
-protoc -I=%pbsrc%/%pbpkg% --go_out=%pbsrc% --go-grpc_out=%pbsrc%^
- %pbsrc%/%pbpkg%/pds.proto
+set pbdir=%~dp0../pb
+protoc -I=%pbdir%^
+ --go_out=%pbdir% --go_opt paths=source_relative^
+ --go-grpc_out=%pbdir% --go-grpc_opt paths=source_relative^
+ %pbdir%/pds.proto

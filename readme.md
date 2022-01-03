@@ -122,10 +122,8 @@ Docker compose file uses already builded images and creates internal network for
 If you want to modify `.go`-code and `.proto` file, you should [download](https://github.com/protocolbuffers/protobuf/blob/master/README.md#protocol-compiler-installation) and install protocol buffer compiler. Then fetch and compile protocol buffer compiler plugins:
 
 ```batch
-go get -u google.golang.org/protobuf
-go get -u google.golang.org/genproto
-go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
-go install google.golang.org/protobuf/cmd/protoc-gen-go
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 ```
 
 To generate protocol buffer code, run `tool/pb.cmd` batch file.

@@ -11,7 +11,6 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/schwarzlichtbezirk/pds/pb"
@@ -94,55 +93,8 @@ func Init() {
 // Run launches server listeners.
 func Run(gmux *Router) {
 	// helps to start HTTP only after gRPC to prevent call to uninitialized data
-	var grpcready = make(chan struct{})
-
-	// starts HTTP servers
-	for _, addr := range cfg.PortHTTP {
-		var addr = envfmt(addr) // localize
-		exitwg.Add(1)
-		go func() {
-			defer exitwg.Done()
-
-			var server = &http.Server{
-				Addr:              addr,
-				Handler:           gmux,
-				ReadTimeout:       time.Duration(cfg.ReadTimeout) * time.Second,
-				ReadHeaderTimeout: time.Duration(cfg.ReadHeaderTimeout) * time.Second,
-				WriteTimeout:      time.Duration(cfg.WriteTimeout) * time.Second,
-				IdleTimeout:       time.Duration(cfg.IdleTimeout) * time.Second,
-				MaxHeaderBytes:    cfg.MaxHeaderBytes,
-			}
-			go func() {
-				// wait until database will be initialized, and start to receive connections
-				// or until exit is signaled
-				select {
-				case <-grpcready:
-				case <-exitctx.Done():
-					return
-				}
-				log.Printf("start http on %s\n", addr)
-				if err := server.ListenAndServe(); err != http.ErrServerClosed {
-					log.Fatalf("failed to serve: %v", err)
-				}
-			}()
-
-			// wait for exit signal
-			<-exitctx.Done()
-
-			// create a deadline to wait for.
-			var ctx, cancel = context.WithTimeout(
-				context.Background(),
-				time.Duration(cfg.ShutdownTimeout)*time.Second)
-			defer cancel()
-
-			server.SetKeepAlivesEnabled(false)
-			if err := server.Shutdown(ctx); err != nil {
-				log.Printf("shutdown http on %s: %v\n", addr, err)
-			} else {
-				log.Printf("stop http on %s\n", addr)
-			}
-		}()
-	}
+	var grpcctx, grpccancel = context.WithCancel(context.Background())
+	var httpctx, httpcancel = context.WithCancel(context.Background())
 
 	// starts gRPC client
 	exitwg.Add(1)
@@ -173,10 +125,9 @@ func Run(gmux *Router) {
 		}
 
 		log.Printf("grpc connecting on %s\n", address)
-		var ctx, cancel = context.WithCancel(context.Background())
 		go func() {
-			defer cancel()
-			if conn, err = grpc.DialContext(ctx, address, options...); err != nil {
+			defer grpccancel()
+			if conn, err = grpc.DialContext(grpcctx, address, options...); err != nil {
 				log.Fatalf("fail to dial on %s: %v", address, err)
 			}
 			grpcClient = pb.NewPortGuideClient(conn)
@@ -186,18 +137,11 @@ func Run(gmux *Router) {
 		}()
 		// wait until connect will be established or have got exit signal
 		select {
-		case <-ctx.Done():
+		case <-grpcctx.Done(): // data is ready, so HTTP can safely serve
 		case <-exitctx.Done():
-			cancel()
+			log.Printf("grpc connection canceled on %s\n", address)
 			return
 		}
-
-		if err := ReadDataFile(envfmt(cfg.DataFile)); err != nil {
-			log.Fatal(err)
-		}
-
-		// data is ready, so HTTP can safely serve
-		close(grpcready)
 
 		// wait for exit signal
 		<-exitctx.Done()
@@ -209,7 +153,74 @@ func Run(gmux *Router) {
 		}
 	}()
 
-	log.Printf("ready")
+	// starts HTTP listeners
+	go func() {
+		defer httpcancel()
+		var httpwg sync.WaitGroup
+
+		for _, addr := range cfg.PortHTTP {
+			var addr = envfmt(addr) // localize
+			httpwg.Add(1)
+			exitwg.Add(1)
+			go func() {
+				defer exitwg.Done()
+
+				var server = &http.Server{
+					Addr:              addr,
+					Handler:           gmux,
+					ReadTimeout:       cfg.ReadTimeout,
+					ReadHeaderTimeout: cfg.ReadHeaderTimeout,
+					WriteTimeout:      cfg.WriteTimeout,
+					IdleTimeout:       cfg.IdleTimeout,
+					MaxHeaderBytes:    cfg.MaxHeaderBytes,
+				}
+				// wait until connect will be established or have got exit signal
+				select {
+				case <-grpcctx.Done():
+				case <-exitctx.Done():
+					return
+				}
+
+				log.Printf("start http on %s\n", addr)
+				go func() {
+					httpwg.Done()
+					if err := server.ListenAndServe(); err != http.ErrServerClosed {
+						log.Fatalf("failed to serve: %v", err)
+					}
+				}()
+
+				// wait for exit signal
+				<-exitctx.Done()
+
+				// create a deadline to wait for.
+				var ctx, cancel = context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+				defer cancel()
+
+				server.SetKeepAlivesEnabled(false)
+				if err := server.Shutdown(ctx); err != nil {
+					log.Printf("shutdown http on %s: %v\n", addr, err)
+				} else {
+					log.Printf("stop http on %s\n", addr)
+				}
+			}()
+		}
+
+		httpwg.Wait()
+	}()
+
+	select {
+	case <-grpcctx.Done():
+		log.Printf("grpc ready")
+	case <-exitctx.Done():
+		return
+	}
+
+	select {
+	case <-httpctx.Done():
+		log.Printf("http ready")
+	case <-exitctx.Done():
+		return
+	}
 }
 
 // Done performs graceful network shutdown,
