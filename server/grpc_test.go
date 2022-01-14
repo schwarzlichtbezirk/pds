@@ -7,6 +7,7 @@ import (
 
 	"github.com/schwarzlichtbezirk/pds/pb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -97,7 +98,11 @@ func Transactions(t *testing.T) {
 	if len(cfg.PortGRPC) == 0 {
 		t.Fatal("no any grpc port defined")
 	}
-	if grpcConn, err = grpc.Dial("localhost"+cfg.PortGRPC[0], grpc.WithInsecure(), grpc.WithBlock()); err != nil {
+	var options = []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock(),
+	}
+	if grpcConn, err = grpc.Dial("localhost"+cfg.PortGRPC[0], options...); err != nil {
 		t.Fatalf("fail to dial: %v", err)
 	}
 	defer func() {

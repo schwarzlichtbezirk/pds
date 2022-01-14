@@ -99,7 +99,7 @@ var ToolGuide_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "pds.proto",
+	Metadata: "pb/pds.proto",
 }
 
 // PortGuideClient is the client API for PortGuide service.
@@ -452,5 +452,5 @@ var PortGuide_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "pds.proto",
+	Metadata: "pb/pds.proto",
 }

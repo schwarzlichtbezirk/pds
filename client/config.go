@@ -2,12 +2,12 @@ package main
 
 import (
 	"errors"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/jessevdk/go-flags"
+	"google.golang.org/grpc/grpclog"
 	"gopkg.in/yaml.v3"
 )
 
@@ -33,6 +33,7 @@ type CfgWebServ struct {
 type CfgRpcServ struct {
 	AddrGRPC   string        `json:"addr-grpc" yaml:"addr-grpc" env:"SERVERURL" short:"u" long:"url" description:"List of URL or IP-addresses with gRPC- services hosts."`
 	PortGRPC   string        `json:"port-grpc" yaml:"port-grpc" env:"PORTGRPC" env-delim:";" short:"p" long:"portgrpc" description:"List of ports of gRPC-services."`
+	SchemeGRPC string        `json:"scheme-grpc" yaml:"scheme-grpc" long:"scheme" description:"gRPC scheme name."`
 	ApiTimeout time.Duration `json:"api-timeout" yaml:"api-timeout"`
 }
 
@@ -60,6 +61,7 @@ var cfg = Config{ // inits default values:
 	CfgRpcServ: CfgRpcServ{
 		AddrGRPC:   "localhost",
 		PortGRPC:   ":50051;:50052",
+		SchemeGRPC: "pds",
 		ApiTimeout: 2 * time.Second,
 	},
 }
@@ -103,7 +105,7 @@ func DetectConfigPath() (retpath string, err error) {
 			retpath = path
 			return
 		}
-		log.Printf("no access to pointed configuration path '%s'\n", cfg.ConfigPath)
+		grpclog.Warningf("no access to pointed configuration path '%s'\n", cfg.ConfigPath)
 	}
 
 	// try to get from config subdirectory on executable path

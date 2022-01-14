@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,6 +14,8 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/schwarzlichtbezirk/pds/pb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/resolver"
 	"google.golang.org/grpc/resolver/manual"
 )
@@ -32,9 +33,13 @@ var (
 	grpcTool   pb.ToolGuideClient
 )
 
+func init() {
+	grpclog.SetLoggerV2(grpclog.NewLoggerV2(os.Stdout, os.Stderr, os.Stderr))
+}
+
 // Init performs global data initialization.
 func Init() {
-	log.Println("starts")
+	grpclog.Infoln("starts")
 
 	// create context and wait the break
 	exitctx, exitfn = context.WithCancel(context.Background())
@@ -52,16 +57,16 @@ func Init() {
 		select {
 		case <-exitctx.Done():
 			if errors.Is(exitctx.Err(), context.DeadlineExceeded) {
-				log.Println("shutting down by timeout")
+				grpclog.Infoln("shutting down by timeout")
 			} else if errors.Is(exitctx.Err(), context.Canceled) {
-				log.Println("shutting down by cancel")
+				grpclog.Infoln("shutting down by cancel")
 			} else {
-				log.Printf("shutting down by %s", exitctx.Err().Error())
+				grpclog.Infof("shutting down by %s", exitctx.Err().Error())
 			}
 		case <-sigint:
-			log.Println("shutting down by break")
+			grpclog.Infoln("shutting down by break")
 		case <-sigterm:
-			log.Println("shutting down by process termination")
+			grpclog.Infoln("shutting down by process termination")
 		}
 		signal.Stop(sigint)
 		signal.Stop(sigterm)
@@ -73,14 +78,14 @@ func Init() {
 
 		// get confiruration path
 		if ConfigPath, err = DetectConfigPath(); err != nil {
-			log.Fatal(err)
+			grpclog.Fatal(err)
 		}
-		log.Printf("config path: %s\n", ConfigPath)
+		grpclog.Infof("config path: %s\n", ConfigPath)
 
 		if err = ReadYaml(cfgfile, &cfg); err != nil {
-			log.Fatalf("can not read '%s' file: %v\n", cfgfile, err)
+			grpclog.Fatalf("can not read '%s' file: %v\n", cfgfile, err)
 		}
-		log.Printf("loaded '%s'\n", cfgfile)
+		grpclog.Infof("loaded '%s'\n", cfgfile)
 		// second iteration, rewrite settings from config file
 		if _, err = flags.NewParser(&cfg, flags.PassDoubleDash).Parse(); err != nil {
 			panic("no way to here")
@@ -94,14 +99,14 @@ func Init() {
 func Run(gmux *Router) {
 	// helps to start HTTP only after gRPC to prevent call to uninitialized data
 	var grpcctx, grpccancel = context.WithCancel(context.Background())
-	var httpctx, httpcancel = context.WithCancel(context.Background())
+	var datactx, datacancel = context.WithCancel(context.Background())
+	//var httpctx, httpcancel = context.WithCancel(context.Background())
 
 	// starts gRPC client
 	exitwg.Add(1)
 	go func() {
 		defer exitwg.Done()
 
-		var err error
 		var conn *grpc.ClientConn
 
 		var addrs []resolver.Address
@@ -110,7 +115,7 @@ func Run(gmux *Router) {
 				addrs = append(addrs, resolver.Address{Addr: url + port})
 			}
 		}
-		var r = manual.NewBuilderWithScheme("pds")
+		var r = manual.NewBuilderWithScheme(cfg.SchemeGRPC)
 		r.InitialState(resolver.State{
 			Addresses: addrs,
 		})
@@ -118,44 +123,72 @@ func Run(gmux *Router) {
 		const serviceConfig = `{"loadBalancingPolicy":"round_robin"}`
 		var address = fmt.Sprintf("%s:///unused", r.Scheme())
 		var options = []grpc.DialOption{
-			grpc.WithInsecure(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithBlock(),
 			grpc.WithResolvers(r),
 			grpc.WithDefaultServiceConfig(serviceConfig),
 		}
 
-		log.Printf("grpc connecting on %s\n", address)
+		var ctx, cancel = context.WithCancel(context.Background())
 		go func() {
-			defer grpccancel()
-			if conn, err = grpc.DialContext(grpcctx, address, options...); err != nil {
-				log.Fatalf("fail to dial on %s: %v", address, err)
+			defer cancel()
+
+			var err error
+			grpclog.Infof("grpc connecting on %s\n", address)
+			if conn, err = grpc.DialContext(ctx, address, options...); err != nil {
+				grpclog.Fatalf("fail to dial on %s: %v", address, err)
 			}
 			grpcClient = pb.NewPortGuideClient(conn)
 			grpcTool = pb.NewToolGuideClient(conn)
 
-			log.Printf("grpc connected on %s\n", address)
+			grpclog.Infof("grpc connected on %s\n", address)
 		}()
 		// wait until connect will be established or have got exit signal
 		select {
-		case <-grpcctx.Done(): // data is ready, so HTTP can safely serve
+		case <-ctx.Done():
 		case <-exitctx.Done():
-			log.Printf("grpc connection canceled on %s\n", address)
+			cancel()
+			grpclog.Warningf("grpc connection canceled on %s\n", address)
 			return
 		}
+
+		// gRPC is established, so database can be loaded
+		grpclog.Infoln("grpc ready")
+		grpccancel()
 
 		// wait for exit signal
 		<-exitctx.Done()
 
 		if err := conn.Close(); err != nil {
-			log.Printf("grpc disconnect on %s: %v\n", address, err)
+			grpclog.Errorf("grpc disconnect on %s: %v\n", address, err)
 		} else {
-			log.Printf("grpc disconnected on %s\n", address)
+			grpclog.Infof("grpc disconnected on %s\n", address)
 		}
+	}()
+
+	// init database
+	exitwg.Add(1)
+	go func() {
+		defer exitwg.Done()
+		// wait until connect will be established or have got exit signal
+		select {
+		case <-grpcctx.Done():
+		case <-exitctx.Done():
+			return
+		}
+
+		if err := ReadDataFile(envfmt(cfg.DataFile)); err != nil {
+			grpclog.Fatal(err)
+		}
+
+		// data is ready, so HTTP can safely serve
+		grpclog.Infoln("data ready")
+		datacancel()
 	}()
 
 	// starts HTTP listeners
 	go func() {
-		defer httpcancel()
+		//defer httpcancel()
 		var httpwg sync.WaitGroup
 
 		for _, addr := range cfg.PortHTTP {
@@ -174,18 +207,18 @@ func Run(gmux *Router) {
 					IdleTimeout:       cfg.IdleTimeout,
 					MaxHeaderBytes:    cfg.MaxHeaderBytes,
 				}
-				// wait until connect will be established or have got exit signal
+				// wait until data will be loaded or have got exit signal
 				select {
-				case <-grpcctx.Done():
+				case <-datactx.Done():
 				case <-exitctx.Done():
 					return
 				}
 
-				log.Printf("start http on %s\n", addr)
+				grpclog.Infof("start http on %s\n", addr)
 				go func() {
 					httpwg.Done()
 					if err := server.ListenAndServe(); err != http.ErrServerClosed {
-						log.Fatalf("failed to serve: %v", err)
+						grpclog.Fatalf("failed to serve: %v", err)
 					}
 				}()
 
@@ -198,29 +231,16 @@ func Run(gmux *Router) {
 
 				server.SetKeepAlivesEnabled(false)
 				if err := server.Shutdown(ctx); err != nil {
-					log.Printf("shutdown http on %s: %v\n", addr, err)
+					grpclog.Errorf("shutdown http on %s: %v\n", addr, err)
 				} else {
-					log.Printf("stop http on %s\n", addr)
+					grpclog.Infof("stop http on %s\n", addr)
 				}
 			}()
 		}
 
 		httpwg.Wait()
+		grpclog.Infoln("http ready")
 	}()
-
-	select {
-	case <-grpcctx.Done():
-		log.Printf("grpc ready")
-	case <-exitctx.Done():
-		return
-	}
-
-	select {
-	case <-httpctx.Done():
-		log.Printf("http ready")
-	case <-exitctx.Done():
-		return
-	}
 }
 
 // Done performs graceful network shutdown,
@@ -230,5 +250,5 @@ func Done() {
 	<-exitctx.Done()
 	// wait until all server threads will be stopped.
 	exitwg.Wait()
-	log.Println("shutting down complete.")
+	grpclog.Infoln("shutting down complete.")
 }

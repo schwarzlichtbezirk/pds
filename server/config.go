@@ -2,11 +2,11 @@ package main
 
 import (
 	"errors"
-	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/jessevdk/go-flags"
+	"google.golang.org/grpc/grpclog"
 	"gopkg.in/yaml.v3"
 )
 
@@ -56,7 +56,7 @@ func DetectConfigPath() (retpath string, err error) {
 			retpath = path
 			return
 		}
-		log.Printf("no access to pointed configuration path '%s'\n", cfg.ConfigPath)
+		grpclog.Warningf("no access to pointed configuration path '%s'\n", cfg.ConfigPath)
 	}
 
 	// try to get from config subdirectory on executable path

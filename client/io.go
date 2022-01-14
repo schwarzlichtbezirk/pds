@@ -3,18 +3,18 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/schwarzlichtbezirk/pds/pb"
+	"google.golang.org/grpc/grpclog"
 )
 
 // ReadDataFile reads ports.json file step by step,
 // and sends readed ports to gRPC stream.
 func ReadDataFile(fname string) (err error) {
-	log.Printf("read file '%s'\n", fname)
+	grpclog.Infof("read file '%s'\n", fname)
 
 	var f *os.File
 	if f, err = os.Open(filepath.Join(ConfigPath, fname)); err != nil {
@@ -38,7 +38,7 @@ func ReadDataFile(fname string) (err error) {
 		if reply, err = stream.CloseAndRecv(); err != nil {
 			return
 		}
-		log.Printf("data base summary: readed %d ports, elapsed %dms",
+		grpclog.Infof("data base summary: readed %d ports, elapsed %dms",
 			reply.PortCount, reply.ElapsedTime)
 	}()
 
@@ -65,7 +65,7 @@ func ReadDataFile(fname string) (err error) {
 			return
 		}
 		if len(port.Coordinates) != 2 {
-			log.Printf("port without coordinates: %s, %s\n", port.Unlocs[0], port.Name)
+			grpclog.Warningf("port without coordinates: %s, %s\n", port.Unlocs[0], port.Name)
 		}
 	}
 

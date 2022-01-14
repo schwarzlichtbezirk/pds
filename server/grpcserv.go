@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"io"
-	"log"
 	"math"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/schwarzlichtbezirk/pds/pb"
+	"google.golang.org/grpc/grpclog"
 )
 
 // Storage is singleton, PDS database
@@ -50,7 +50,7 @@ func (s *routePortGuideServer) RecordList(stream pb.PortGuide_RecordListServer) 
 	for {
 		var port, err = stream.Recv()
 		if err == io.EOF {
-			log.Printf("fetched %d items\n", count)
+			grpclog.Infof("fetched %d items\n", count)
 			var endTime = time.Now()
 			return stream.SendAndClose(&pb.Summary{
 				PortCount:   count,

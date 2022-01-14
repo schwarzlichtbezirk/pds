@@ -1,5 +1,5 @@
 #!/bin/bash
-cd $GOPATH/src/github.com/schwarzlichtbezirk/pds
+cd $(dirname $0)/..
 mkdir -pv $GOPATH/bin/pds-config
 cp -ruv ./config/* $GOPATH/bin/pds-config
 go env -w GOOS=linux GOARCH=amd64

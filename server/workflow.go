@@ -3,7 +3,6 @@
 import (
 	"context"
 	"errors"
-	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -13,6 +12,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/schwarzlichtbezirk/pds/pb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/grpclog"
 )
 
 var (
@@ -23,9 +23,13 @@ var (
 	exitwg sync.WaitGroup
 )
 
+func init() {
+	grpclog.SetLoggerV2(grpclog.NewLoggerV2(os.Stdout, os.Stderr, os.Stderr))
+}
+
 // Init performs global data initialization.
 func Init() {
-	log.Println("starts")
+	grpclog.Infoln("starts")
 
 	// create context and wait the break
 	exitctx, exitfn = context.WithCancel(context.Background())
@@ -43,16 +47,16 @@ func Init() {
 		select {
 		case <-exitctx.Done():
 			if errors.Is(exitctx.Err(), context.DeadlineExceeded) {
-				log.Println("shutting down by timeout")
+				grpclog.Infoln("shutting down by timeout")
 			} else if errors.Is(exitctx.Err(), context.Canceled) {
-				log.Println("shutting down by cancel")
+				grpclog.Infoln("shutting down by cancel")
 			} else {
-				log.Printf("shutting down by %s", exitctx.Err().Error())
+				grpclog.Infof("shutting down by %s\n", exitctx.Err().Error())
 			}
 		case <-sigint:
-			log.Println("shutting down by break")
+			grpclog.Infoln("shutting down by break")
 		case <-sigterm:
-			log.Println("shutting down by process termination")
+			grpclog.Infoln("shutting down by process termination")
 		}
 		signal.Stop(sigint)
 		signal.Stop(sigterm)
@@ -64,14 +68,14 @@ func Init() {
 
 		// get confiruration path
 		if ConfigPath, err = DetectConfigPath(); err != nil {
-			log.Fatal(err)
+			grpclog.Fatal(err)
 		}
-		log.Printf("config path: %s\n", ConfigPath)
+		grpclog.Infof("config path: %s\n", ConfigPath)
 
 		if err = ReadYaml(cfgfile, &cfg); err != nil {
-			log.Fatalf("can not read '%s' file: %v\n", cfgfile, err)
+			grpclog.Fatalf("can not read '%s' file: %v\n", cfgfile, err)
 		}
-		log.Printf("loaded '%s'\n", cfgfile)
+		grpclog.Infof("loaded '%s'\n", cfgfile)
 		// second iteration, rewrite settings from config file
 		if _, err = flags.NewParser(&cfg, flags.PassDoubleDash).Parse(); err != nil {
 			panic("no way to here")
@@ -81,8 +85,6 @@ func Init() {
 
 // Run launches server listeners.
 func Run() {
-	var grpcctx, grpccancel = context.WithCancel(context.Background())
-
 	// starts gRPC servers
 	func() {
 		var grpcwg sync.WaitGroup
@@ -96,9 +98,9 @@ func Run() {
 				var err error
 				var lis net.Listener
 
-				log.Printf("grpc server %s starts\n", addr)
+				grpclog.Infof("grpc server %s starts\n", addr)
 				if lis, err = net.Listen("tcp", addr); err != nil {
-					log.Fatalf("failed to listen: %v", err)
+					grpclog.Fatalf("failed to listen: %v", err)
 				}
 				var server = grpc.NewServer()
 				pb.RegisterToolGuideServer(server, &routeToolGuideServer{addr: addr})
@@ -106,7 +108,7 @@ func Run() {
 				go func() {
 					grpcwg.Done()
 					if err = server.Serve(lis); err != nil {
-						log.Fatalf("failed to serve: %v", err)
+						grpclog.Fatalf("failed to serve: %v", err)
 					}
 				}()
 
@@ -115,20 +117,13 @@ func Run() {
 
 				server.GracefulStop()
 
-				log.Printf("grpc server %s closed\n", addr)
+				grpclog.Infof("grpc server %s closed\n", addr)
 			}()
 		}
 
 		grpcwg.Wait()
-		grpccancel()
+		grpclog.Infoln("grpc ready")
 	}()
-
-	select {
-	case <-grpcctx.Done():
-		log.Printf("grpc ready")
-	case <-exitctx.Done():
-		return
-	}
 }
 
 // Done performs graceful network shutdown,
@@ -138,5 +133,5 @@ func Done() {
 	<-exitctx.Done()
 	// wait until all server threads will be stopped.
 	exitwg.Wait()
-	log.Println("shutting down complete.")
+	grpclog.Infoln("shutting down complete.")
 }

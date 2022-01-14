@@ -26,5 +26,7 @@ grpcserver:
     addr-grpc: localhost
     # List of ports of gRPC-services, divided by semicolons.
     port-grpc: :50051;:50052
+    # gRPC scheme name.
+    scheme-grpc: pds
     # gRPC API call timeout.
     api-timeout: 2s
