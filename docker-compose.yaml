@@ -33,7 +33,7 @@ services:
         aliases:
           - frontend
     environment:
-      SERVERURL: 172.20.1.7
+      ADDRGRPC: 172.20.1.7:50051;172.20.1.7:50052
     restart: on-failure
     stop_signal: SIGINT
     stop_grace_period: 15s

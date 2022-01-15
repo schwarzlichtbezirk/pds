@@ -23,9 +23,7 @@ webserver: # See https://golang.org/pkg/net/http/#Server for details.
     shutdown-timeout: 15s
 grpcserver:
     # List of URL or IP-addresses with gRPC-services hosts, divided by semicolons.
-    addr-grpc: localhost
-    # List of ports of gRPC-services, divided by semicolons.
-    port-grpc: :50051;:50052
+    addr-grpc: localhost:50051;localhost:50052
     # gRPC scheme name.
     scheme-grpc: pds
     # gRPC API call timeout.

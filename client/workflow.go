@@ -110,10 +110,8 @@ func Run(gmux *Router) {
 		var conn *grpc.ClientConn
 
 		var addrs []resolver.Address
-		for _, url := range strings.Split(envfmt(cfg.AddrGRPC), ";") {
-			for _, port := range strings.Split(envfmt(cfg.PortGRPC), ";") {
-				addrs = append(addrs, resolver.Address{Addr: url + port})
-			}
+		for _, addr := range strings.Split(envfmt(cfg.AddrGRPC), ";") {
+			addrs = append(addrs, resolver.Address{Addr: addr})
 		}
 		var r = manual.NewBuilderWithScheme(cfg.SchemeGRPC)
 		r.InitialState(resolver.State{

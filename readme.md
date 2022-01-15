@@ -32,40 +32,26 @@ Client and server test sample with gRPC streaming and REST functionality. Sample
 - `grpcserv.go` have gRPC interface implementation for server.
 - `io.go` reads settings from configuration file.
 
-### pds
+### pb
 
 Here is `pds.proto` with gRPC interface declaration, and files produced by protobuf compiler.
 
+## How to install
+
+1. First of all install [Golang](https://go.dev/dl/) of last version. Requires that [GOPATH is set](https://golang.org/doc/code.html#GOPATH). Be sure that `PATH` environment variable contains `%GOPATH%/bin` chunk. It's needed to run plugins for `protoc` compiler.
+
+2. Install [protocol buffer compiler](https://github.com/protocolbuffers/protobuf/blob/master/README.md#protocol-compiler-installation).
+
+3. Clone this git repo and run `tools/gitinstall.cmd` batch-file placed in project to deploy all dependencies.
+
+```batch
+git clone github.com/schwarzlichtbezirk/pds
+call tools/gitinstall.cmd
+```
+
 ## How to run on localhost
 
-1. First of all install [Golang](https://go.dev/dl/) of last version. Requires that [GOPATH is set](https://golang.org/doc/code.html#GOPATH).
-
-2. Fetch golang `grpc` library.
-
-```batch
-go get -u google.golang.org/grpc
-```
-
-Note: if there is no access to `golang.org` host, use VPN (via Netherlands/USA) or git repositories cloning.
-
-3. Fetch this source code and compile application.
-
-```batch
-go get github.com/schwarzlichtbezirk/pds
-```
-
-Folder `github.com\schwarzlichtbezirk\pds\tool` contains batch helpers to compile services for Windows for x86 and amd64 platforms. Also it has shell-scripts to compile for Linux amd64 platforms.
-
-4. Edit config-files `github.com/schwarzlichtbezirk/pds/config/client.yaml` and `github.com/schwarzlichtbezirk/pds/config/server.yaml`.
-
-5. Run services.
-
-```batch
-start "PDS server" %GOPATH%/bin/pds.server.x64.exe
-start "PDS client" %GOPATH%/bin/pds.client.x64.exe
-```
-
-or run `github.com\schwarzlichtbezirk\pds\tool\start.x64.cmd` batch-file to start composition of client and server.
+Folder `github.com/schwarzlichtbezirk/pds/tools` contains batch helpers to compile services for Windows for x86 and amd64 platforms. Also it has shell-scripts to compile for Linux amd64 platforms. So, compile application by `tools/build.win.x64.cmd` (or batch for x86), and run `tools/start.x64.cmd` batch-file to start composition of client and server.
 
 ## Connections
 
@@ -73,7 +59,7 @@ Ports thats used at network are defined in configuration of server and client (s
 
 Server listen on `50051` and `50052` ports by default, and it can be a list for load balancing.
 
-Client creates connection to gRPC server on the same ports. There is used `round_robin` load balancer policy. Host can be defined by environment variable `SERVERURL`, and if it not defined or empty, `localhost` is used. Also client opens `8008` port by default to listen for incoming connections to serve REST API, and it can be a list for load balancing.
+Client creates connection to gRPC server on the same ports. There is used `round_robin` load balancer policy. Hosts can be defined by environment variable `ADDRGRPC` with the list of values `addr:port` devided by semicolons, and if it not defined or empty, `localhost:50051;localhost:50052` is used. Also client opens `8008` port by default to listen for incoming connections to serve REST API, and it can be a list for load balancing.
 
 On localhost server and client can be run as is without any modifications in configuration.
 
@@ -82,14 +68,14 @@ On localhost server and client can be run as is without any modifications in con
 1. Change current directory to project root.
 
 ```batch
-cd /d %GOPATH%/src/github.com/schwarzlichtbezirk/dfs
+cd /d %GOPATH%/src/github.com/schwarzlichtbezirk/pds
 ```
 
 2. Build docker images for `server` and for `client` services.
 
 ```batch
-docker build --pull --rm -f "Dockerfile.server" -t dfs-server:latest "."
-docker build --pull --rm -f "Dockerfile.client" -t dfs-client:latest "."
+docker build --pull --rm -f "Dockerfile.server" -t pds-server:latest "."
+docker build --pull --rm -f "Dockerfile.client" -t pds-client:latest "."
 ```
 
 3. Then run docker compose file.
@@ -110,23 +96,12 @@ Then it should be run containers on `pds-net` network.
 
 ```batch
 docker run --rm -d -p 50051:50051 -p 50052:50052 --network=pds-net --ip=172.20.1.7 --name server pds-server
-docker run --rm -d -p 8008:8008 --network=pds-net --ip=172.20.1.8 -e SERVERURL="172.20.1.7" --name client pds-client
+docker run --rm -d -p 8008:8008 --network=pds-net --ip=172.20.1.8 -e ADDRGRPC="172.20.1.7:50051;172.20.1.7:50052" --name client pds-client
 ```
 
 ### Run by docker compose file
 
 Docker compose file uses already builded images and creates internal network for containers.
-
-## What its need else to modify code
-
-If you want to modify `.go`-code and `.proto` file, you should [download](https://github.com/protocolbuffers/protobuf/blob/master/README.md#protocol-compiler-installation) and install protocol buffer compiler. Then fetch and compile protocol buffer compiler plugins:
-
-```batch
-go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-```
-
-To generate protocol buffer code, run `tool/pb.cmd` batch file.
 
 ## REST API
 
