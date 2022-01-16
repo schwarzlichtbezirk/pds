@@ -10,9 +10,10 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jessevdk/go-flags"
-	"github.com/schwarzlichtbezirk/pds/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/grpclog"
@@ -26,11 +27,6 @@ var (
 	exitfn  context.CancelFunc
 	// wait group for all server goroutines
 	exitwg sync.WaitGroup
-)
-
-var (
-	grpcClient pb.PortGuideClient
-	grpcTool   pb.ToolGuideClient
 )
 
 func init() {
@@ -96,18 +92,15 @@ func Init() {
 }
 
 // Run launches server listeners.
-func Run(gmux *Router) {
-	// helps to start HTTP only after gRPC to prevent call to uninitialized data
+func Run() {
 	var grpcctx, grpccancel = context.WithCancel(context.Background())
-	var datactx, datacancel = context.WithCancel(context.Background())
-	//var httpctx, httpcancel = context.WithCancel(context.Background())
+	var mux = runtime.NewServeMux()
 
-	// starts gRPC client
+	// starts HTTP-gRPC proxy
 	exitwg.Add(1)
 	go func() {
 		defer exitwg.Done()
-
-		var conn *grpc.ClientConn
+		defer grpccancel() // send close signal to gRPC endpoint function
 
 		var addrs []resolver.Address
 		for _, addr := range strings.Split(envfmt(cfg.AddrGRPC), ";") {
@@ -127,69 +120,21 @@ func Run(gmux *Router) {
 			grpc.WithDefaultServiceConfig(serviceConfig),
 		}
 
-		var ctx, cancel = context.WithCancel(context.Background())
-		go func() {
-			defer cancel()
-
-			var err error
-			grpclog.Infof("grpc connecting on %s\n", address)
-			if conn, err = grpc.DialContext(ctx, address, options...); err != nil {
-				grpclog.Fatalf("fail to dial on %s: %v", address, err)
-			}
-			grpcClient = pb.NewPortGuideClient(conn)
-			grpcTool = pb.NewToolGuideClient(conn)
-
-			grpclog.Infof("grpc connected on %s\n", address)
-		}()
-		// wait until connect will be established or have got exit signal
-		select {
-		case <-ctx.Done():
-		case <-exitctx.Done():
-			cancel()
-			grpclog.Warningf("grpc connection canceled on %s\n", address)
-			return
+		// establish connection and create gRPC clients
+		grpclog.Infof("grpc connecting on %s\n", address)
+		if err := RegisterAllHandlersFromEndpoint(grpcctx, mux, address, options); err != nil {
+			grpclog.Fatalf("failed to register gateway on %s: %v", address, err)
 		}
+		grpclog.Infof("grpc connected on %s\n", address)
 
-		// gRPC is established, so database can be loaded
-		grpclog.Infoln("grpc ready")
-		grpccancel()
-
-		// wait for exit signal
-		<-exitctx.Done()
-
-		if err := conn.Close(); err != nil {
-			grpclog.Errorf("grpc disconnect on %s: %v\n", address, err)
-		} else {
-			grpclog.Infof("grpc disconnected on %s\n", address)
-		}
-	}()
-
-	// init database
-	exitwg.Add(1)
-	go func() {
-		defer exitwg.Done()
-		// wait until connect will be established or have got exit signal
-		select {
-		case <-grpcctx.Done():
-		case <-exitctx.Done():
-			return
-		}
-
+		// init database
 		if err := ReadDataFile(envfmt(cfg.DataFile)); err != nil {
 			grpclog.Fatal(err)
 		}
 
 		// data is ready, so HTTP can safely serve
-		grpclog.Infoln("data ready")
-		datacancel()
-	}()
-
-	// starts HTTP listeners
-	go func() {
-		//defer httpcancel()
 		var httpwg sync.WaitGroup
-
-		for _, addr := range cfg.PortHTTP {
+		for _, addr := range strings.Split(envfmt(cfg.PortHTTP), ";") {
 			var addr = envfmt(addr) // localize
 			httpwg.Add(1)
 			exitwg.Add(1)
@@ -198,18 +143,12 @@ func Run(gmux *Router) {
 
 				var server = &http.Server{
 					Addr:              addr,
-					Handler:           gmux,
+					Handler:           mux,
 					ReadTimeout:       cfg.ReadTimeout,
 					ReadHeaderTimeout: cfg.ReadHeaderTimeout,
 					WriteTimeout:      cfg.WriteTimeout,
 					IdleTimeout:       cfg.IdleTimeout,
 					MaxHeaderBytes:    cfg.MaxHeaderBytes,
-				}
-				// wait until data will be loaded or have got exit signal
-				select {
-				case <-datactx.Done():
-				case <-exitctx.Done():
-					return
 				}
 
 				grpclog.Infof("start http on %s\n", addr)
@@ -235,9 +174,12 @@ func Run(gmux *Router) {
 				}
 			}()
 		}
-
 		httpwg.Wait()
-		grpclog.Infoln("http ready")
+		grpclog.Infoln("ready")
+
+		// wait for exit signal
+		<-exitctx.Done()
+		grpclog.Infoln("grpc disconnect")
 	}()
 }
 
@@ -248,5 +190,7 @@ func Done() {
 	<-exitctx.Done()
 	// wait until all server threads will be stopped.
 	exitwg.Wait()
+	// give opportunity to get and process close signal to all goroutines
+	time.Sleep(5 * time.Millisecond)
 	grpclog.Infoln("shutting down complete.")
 }

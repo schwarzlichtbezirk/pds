@@ -1,30 +1,29 @@
 # Client configuration file, used in read-only mode on service initialization.
 
 command-line:
-    # Name of file with database.
-    data-file: ports.json
+  # Name of file with database.
+  data-file: ports.json
 webserver: # See https://golang.org/pkg/net/http/#Server for details.
-    # List of address:port values for non-encrypted connections.
-    # Address is skipped in most common cases, port only remains.
-    port-http:
-        - :8008
-    # Maximum duration for reading the entire request, including the body.
-    read-timeout: 15s
-    # Amount of time allowed to read request headers.
-    read-header-timeout: 15s
-    # Maximum duration before timing out writes of the response.
-    write-timeout: 15s
-    # Maximum amount of time to wait for the next request when keep-alives are enabled.
-    idle-timeout: 60s
-    # Controls the maximum number of bytes the server will read parsing
-    # the request header's keys and values, including the request line, in bytes.
-    max-header-bytes: 1048576 # 1M
-    # Maximum duration to wait for graceful shutdown.
-    shutdown-timeout: 15s
+  # List of address:port values for non-encrypted connections.
+  # Address is skipped in most common cases, port only remains.
+  port-http: :8008
+  # Maximum duration for reading the entire request, including the body.
+  read-timeout: 15s
+  # Amount of time allowed to read request headers.
+  read-header-timeout: 15s
+  # Maximum duration before timing out writes of the response.
+  write-timeout: 15s
+  # Maximum amount of time to wait for the next request when keep-alives are enabled.
+  idle-timeout: 60s
+  # Controls the maximum number of bytes the server will read parsing
+  # the request header's keys and values, including the request line, in bytes.
+  max-header-bytes: 1048576 # 1M
+  # Maximum duration to wait for graceful shutdown.
+  shutdown-timeout: 15s
 grpcserver:
-    # List of URL or IP-addresses with gRPC-services hosts, divided by semicolons.
-    addr-grpc: localhost:50051;localhost:50052
-    # gRPC scheme name.
-    scheme-grpc: pds
-    # gRPC API call timeout.
-    api-timeout: 2s
+  # List of URL or IP-addresses with gRPC-services hosts, divided by semicolons.
+  addr-grpc: localhost:50051;localhost:50052
+  # gRPC scheme name.
+  scheme-grpc: pds
+  # gRPC API call timeout.
+  api-timeout: 2s

@@ -3,35 +3,82 @@ option go_package = "github.com/schwarzlichtbezirk/pds/pb";
 
 package pds;
 
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
 // Interface with system helper functionality.
 service ToolGuide {
 	// Check up service health.
-	rpc Ping (Content) returns (Content) {}
+	rpc Ping (google.protobuf.Empty) returns (google.protobuf.Timestamp) {
+		option (google.api.http) = {
+			post: "/api/tool/ping"
+		};
+	}
+	rpc Echo (pds.Content) returns (pds.Content) {
+		option (google.api.http) = {
+			post: "/api/tool/echo"
+			body: "*"
+			additional_bindings: {
+				post: "/api/tool/echo/{value}"
+			}
+		};
+	}
 }
 
 // Ping message content.
 message Content {
-	bytes Value = 1;
+	bytes value = 1;
 }
 
 // Interface with port functionality.
 service PortGuide {
 	// Accepts a stream of Ports and adds them to map.
-	rpc RecordList (stream Port) returns (Summary) {}
+	rpc RecordList (stream pds.Port) returns (pds.Summary) {}
 
 	// Stores Port to map and return associated key.
-	rpc SetByKey (Port) returns (Key) {}
+	rpc SetByKey (pds.Port) returns (pds.Key) {
+		option (google.api.http) = {
+			post: "/api/port/set"
+			body: "*"
+		};
+	}
 	// Returns Port by associated key.
-	rpc GetByKey (Key) returns (Port) {}
+	rpc GetByKey (pds.Key) returns (pds.Port) {
+		option (google.api.http) = {
+			post: "/api/port/get"
+			body: "*"
+		};
+	}
 	// Returns Port by associated name.
-	rpc GetByName (Name) returns (Port) {}
+	rpc GetByName (pds.Name) returns (pds.Port) {
+		option (google.api.http) = {
+			post: "/api/port/name"
+			body: "*"
+		};
+	}
 	// Finds nearest Port to given coordinates.
-	rpc FindNearest (Point) returns (Port) {}
+	rpc FindNearest (pds.Point) returns (pds.Port) {
+		option (google.api.http) = {
+			post: "/api/port/near"
+			body: "*"
+		};
+	}
 	// Finds all ports in given circle.
-	rpc FindInCircle (Circle) returns (Ports) {}
+	rpc FindInCircle (pds.Circle) returns (pds.Ports) {
+		option (google.api.http) = {
+			post: "/api/port/circle"
+			body: "*"
+		};
+	}
 	// Finds all ports each of which contains given text
 	// in one of the fields: name, city, province, country.
-	rpc FindText (Quest) returns (Ports) {}
+	rpc FindText (pds.Quest) returns (pds.Ports) {
+		option (google.api.http) = {
+			post: "/api/port/text"
+			body: "*"
+		};
+	}
 }
 
 // Port description.

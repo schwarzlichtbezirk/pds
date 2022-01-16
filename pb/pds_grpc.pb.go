@@ -11,6 +11,8 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -23,7 +25,8 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ToolGuideClient interface {
 	// Check up service health.
-	Ping(ctx context.Context, in *Content, opts ...grpc.CallOption) (*Content, error)
+	Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*timestamppb.Timestamp, error)
+	Echo(ctx context.Context, in *Content, opts ...grpc.CallOption) (*Content, error)
 }
 
 type toolGuideClient struct {
@@ -34,9 +37,18 @@ func NewToolGuideClient(cc grpc.ClientConnInterface) ToolGuideClient {
 	return &toolGuideClient{cc}
 }
 
-func (c *toolGuideClient) Ping(ctx context.Context, in *Content, opts ...grpc.CallOption) (*Content, error) {
-	out := new(Content)
+func (c *toolGuideClient) Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*timestamppb.Timestamp, error) {
+	out := new(timestamppb.Timestamp)
 	err := c.cc.Invoke(ctx, "/pds.ToolGuide/Ping", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *toolGuideClient) Echo(ctx context.Context, in *Content, opts ...grpc.CallOption) (*Content, error) {
+	out := new(Content)
+	err := c.cc.Invoke(ctx, "/pds.ToolGuide/Echo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +60,8 @@ func (c *toolGuideClient) Ping(ctx context.Context, in *Content, opts ...grpc.Ca
 // for forward compatibility
 type ToolGuideServer interface {
 	// Check up service health.
-	Ping(context.Context, *Content) (*Content, error)
+	Ping(context.Context, *emptypb.Empty) (*timestamppb.Timestamp, error)
+	Echo(context.Context, *Content) (*Content, error)
 	mustEmbedUnimplementedToolGuideServer()
 }
 
@@ -56,8 +69,11 @@ type ToolGuideServer interface {
 type UnimplementedToolGuideServer struct {
 }
 
-func (UnimplementedToolGuideServer) Ping(context.Context, *Content) (*Content, error) {
+func (UnimplementedToolGuideServer) Ping(context.Context, *emptypb.Empty) (*timestamppb.Timestamp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
+}
+func (UnimplementedToolGuideServer) Echo(context.Context, *Content) (*Content, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Echo not implemented")
 }
 func (UnimplementedToolGuideServer) mustEmbedUnimplementedToolGuideServer() {}
 
@@ -73,7 +89,7 @@ func RegisterToolGuideServer(s grpc.ServiceRegistrar, srv ToolGuideServer) {
 }
 
 func _ToolGuide_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Content)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -85,7 +101,25 @@ func _ToolGuide_Ping_Handler(srv interface{}, ctx context.Context, dec func(inte
 		FullMethod: "/pds.ToolGuide/Ping",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ToolGuideServer).Ping(ctx, req.(*Content))
+		return srv.(ToolGuideServer).Ping(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ToolGuide_Echo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Content)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ToolGuideServer).Echo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pds.ToolGuide/Echo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ToolGuideServer).Echo(ctx, req.(*Content))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -100,6 +134,10 @@ var ToolGuide_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Ping",
 			Handler:    _ToolGuide_Ping_Handler,
+		},
+		{
+			MethodName: "Echo",
+			Handler:    _ToolGuide_Echo_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

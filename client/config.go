@@ -20,7 +20,7 @@ type CfgCmdLine struct {
 
 // CfgWebServ is web server settings.
 type CfgWebServ struct {
-	PortHTTP          []string      `json:"port-http" yaml:"port-http" short:"w" long:"porthttp" description:"List of address:port values for non-encrypted connections. Address is skipped in most common cases, port only remains."`
+	PortHTTP          string        `json:"port-http" yaml:"port-http" env:"PORTHTTP" env-delim:";" short:"w" long:"porthttp" description:"List of address:port values for non-encrypted connections. Address is skipped in most common cases, port only remains."`
 	ReadTimeout       time.Duration `json:"read-timeout" yaml:"read-timeout" long:"rt" description:"Maximum duration for reading the entire request, including the body."`
 	ReadHeaderTimeout time.Duration `json:"read-header-timeout" yaml:"read-header-timeout" long:"rht" description:"Amount of time allowed to read request headers."`
 	WriteTimeout      time.Duration `json:"write-timeout" yaml:"write-timeout" long:"wt" description:"Maximum duration before timing out writes of the response."`
@@ -49,7 +49,7 @@ var cfg = Config{ // inits default values:
 		DataFile: "ports.json",
 	},
 	CfgWebServ: CfgWebServ{
-		PortHTTP:          []string{":8008"},
+		PortHTTP:          ":8008",
 		ReadTimeout:       time.Duration(15) * time.Second,
 		ReadHeaderTimeout: time.Duration(15) * time.Second,
 		WriteTimeout:      time.Duration(15) * time.Second,

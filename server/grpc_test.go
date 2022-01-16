@@ -89,9 +89,9 @@ func Transactions(t *testing.T) {
 	t.Logf("run transactions")
 
 	var (
-		err        error
-		grpcConn   *grpc.ClientConn
-		grpcClient pb.PortGuideClient
+		err      error
+		grpcConn *grpc.ClientConn
+		grpcPort pb.PortGuideClient
 	)
 
 	// make client connection for gRPC on localhost
@@ -111,7 +111,7 @@ func Transactions(t *testing.T) {
 		}
 		t.Logf("client disconnected")
 	}()
-	grpcClient = pb.NewPortGuideClient(grpcConn)
+	grpcPort = pb.NewPortGuideClient(grpcConn)
 	t.Logf("client connected")
 
 	// limit execution time of the gRPC calls
@@ -122,7 +122,7 @@ func Transactions(t *testing.T) {
 	var port *pb.Port
 	for _, port = range origPort {
 		var key *pb.Key
-		if key, err = grpcClient.SetByKey(ctx, port); err != nil {
+		if key, err = grpcPort.SetByKey(ctx, port); err != nil {
 			t.Fatalf("fail on SetByKey for '%s' call: %v", port.Name, err)
 		}
 		if key.Value != port.Unlocs[0] {
@@ -131,7 +131,7 @@ func Transactions(t *testing.T) {
 	}
 
 	// test api core for /api/port/get
-	if port, err = grpcClient.GetByKey(ctx, &pb.Key{Value: "AEDXB"}); err != nil {
+	if port, err = grpcPort.GetByKey(ctx, &pb.Key{Value: "AEDXB"}); err != nil {
 		t.Fatalf("fail on GetByKey call: %v", err)
 	}
 	if !proto.Equal(port, dubai) {
@@ -139,7 +139,7 @@ func Transactions(t *testing.T) {
 	}
 
 	// test api core for /api/port/name
-	if port, err = grpcClient.GetByName(ctx, &pb.Name{Value: "Dubai"}); err != nil {
+	if port, err = grpcPort.GetByName(ctx, &pb.Name{Value: "Dubai"}); err != nil {
 		t.Fatalf("fail on GetByName call: %v", err)
 	}
 	if !proto.Equal(port, dubai) {
@@ -151,7 +151,7 @@ func Transactions(t *testing.T) {
 		Latitude:  25.229789,
 		Longitude: 55.165100,
 	}
-	if port, err = grpcClient.FindNearest(ctx, &p); err != nil {
+	if port, err = grpcPort.FindNearest(ctx, &p); err != nil {
 		t.Fatalf("fail on FindNearest call: %v", err)
 	}
 	if !proto.Equal(port, dubai) {
@@ -167,7 +167,7 @@ func Transactions(t *testing.T) {
 		Radius: 40000,
 	}
 	var ports *pb.Ports
-	if ports, err = grpcClient.FindInCircle(ctx, &circ); err != nil {
+	if ports, err = grpcPort.FindInCircle(ctx, &circ); err != nil {
 		t.Fatalf("fail on FindInCircle call: %v", err)
 	}
 	if len(ports.List) != 3 {
@@ -184,7 +184,7 @@ func Transactions(t *testing.T) {
 		Value:     "dubai",
 		Sensitive: false,
 	}
-	if ports, err = grpcClient.FindText(ctx, &q1); err != nil {
+	if ports, err = grpcPort.FindText(ctx, &q1); err != nil {
 		t.Fatalf("fail on FindText call: %v", err)
 	}
 	if len(ports.List) != 2 {
@@ -205,7 +205,7 @@ func Transactions(t *testing.T) {
 		Sensitive: false,
 		Whole:     false,
 	}
-	if ports, err = grpcClient.FindText(ctx, &q2); err != nil {
+	if ports, err = grpcPort.FindText(ctx, &q2); err != nil {
 		t.Fatalf("fail on FindText call: %v", err)
 	}
 	if len(ports.List) != 1 {

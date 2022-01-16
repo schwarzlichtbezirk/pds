@@ -10,6 +10,8 @@ import (
 
 	"github.com/schwarzlichtbezirk/pds/pb"
 	"google.golang.org/grpc/grpclog"
+	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Storage is singleton, PDS database
@@ -35,7 +37,12 @@ type routeToolGuideServer struct {
 	addr string
 }
 
-func (routeToolGuideServer) Ping(ctx context.Context, cnt *pb.Content) (*pb.Content, error) {
+func (routeToolGuideServer) Ping(ctx context.Context, cnt *emptypb.Empty) (*timestamppb.Timestamp, error) {
+	var ts = timestamppb.Now()
+	return ts, nil
+}
+
+func (routeToolGuideServer) Echo(ctx context.Context, cnt *pb.Content) (*pb.Content, error) {
 	return cnt, nil
 }
 
@@ -80,7 +87,7 @@ func (s *routePortGuideServer) GetByKey(ctx context.Context, key *pb.Key) (*pb.P
 
 func (s *routePortGuideServer) GetByName(ctx context.Context, name *pb.Name) (*pb.Port, error) {
 	var found = &pb.Port{} // result
-	storage.Range(func(key, val interface{}) bool {
+	storage.Range(func(_, val interface{}) bool {
 		var port = val.(*pb.Port)
 		if port.Name == name.Value {
 			found = port
@@ -94,7 +101,7 @@ func (s *routePortGuideServer) GetByName(ctx context.Context, name *pb.Name) (*p
 func (s *routePortGuideServer) FindNearest(ctx context.Context, coord *pb.Point) (*pb.Port, error) {
 	var distance float64 = 1e10 // let's set it to any maximum possible value
 	var found = &pb.Port{}      // result
-	storage.Range(func(key, val interface{}) bool {
+	storage.Range(func(_, val interface{}) bool {
 		var port = val.(*pb.Port)
 		if len(port.Coordinates) == 2 {
 			var d = Haversine(
@@ -112,7 +119,7 @@ func (s *routePortGuideServer) FindNearest(ctx context.Context, coord *pb.Point)
 func (s *routePortGuideServer) FindInCircle(ctx context.Context, circ *pb.Circle) (*pb.Ports, error) {
 	var ports = pb.Ports{}
 	var r = float64(circ.Radius)
-	storage.Range(func(key, val interface{}) bool {
+	storage.Range(func(_, val interface{}) bool {
 		var port = val.(*pb.Port)
 		if len(port.Coordinates) == 2 {
 			var d = Haversine(
@@ -143,7 +150,7 @@ func (s *routePortGuideServer) FindText(ctx context.Context, q *pb.Quest) (*pb.P
 	}
 
 	var ports = pb.Ports{}
-	storage.Range(func(key, val interface{}) bool {
+	storage.Range(func(_, val interface{}) bool {
 		var port = val.(*pb.Port)
 		if cmp(port.Name) || cmp(port.City) || cmp(port.Province) || cmp(port.Country) {
 			ports.List = append(ports.List, port)

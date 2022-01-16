@@ -28,7 +28,7 @@ func ReadDataFile(fname string) (err error) {
 
 	// inits gRPC stream
 	var stream pb.PortGuide_RecordListClient
-	if stream, err = grpcClient.RecordList(ctx); err != nil {
+	if stream, err = grpcPort.RecordList(ctx); err != nil {
 		return
 	}
 
