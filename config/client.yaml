@@ -1,12 +1,13 @@
 # Client configuration file, used in read-only mode on service initialization.
 
-command-line:
+data-kit:
   # Name of file with database.
   data-file: ports.json
-webserver: # See https://golang.org/pkg/net/http/#Server for details.
+webs-erver: # See https://golang.org/pkg/net/http/#Server for details.
   # List of address:port values for non-encrypted connections.
   # Address is skipped in most common cases, port only remains.
-  port-http: :8008
+  port-http:
+    - :8008
   # Maximum duration for reading the entire request, including the body.
   read-timeout: 15s
   # Amount of time allowed to read request headers.
@@ -20,10 +21,17 @@ webserver: # See https://golang.org/pkg/net/http/#Server for details.
   max-header-bytes: 1048576 # 1M
   # Maximum duration to wait for graceful shutdown.
   shutdown-timeout: 15s
-grpcserver:
+grpc-server:
   # List of URL or IP-addresses with gRPC-services hosts, divided by semicolons.
-  addr-grpc: localhost:50051;localhost:50052
+  addr-grpc:
+    - localhost:50051
+    - localhost:50052
   # gRPC scheme name.
   scheme-grpc: pds
-  # gRPC API call timeout.
-  api-timeout: 2s
+logger:
+  # The logging level the logger should log at. Can be: panic, fatal, error, warn, info, debug, trace.
+  log-level: info
+  # Set to true to bypass checking for a TTY before outputting colors.
+  force-colors: true
+  # Format to use is the same than for time.Format or time.Parse from the standard library.
+  timestamp-format: "15:04:05"

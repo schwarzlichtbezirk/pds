@@ -9,10 +9,12 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/jessevdk/go-flags"
 	"github.com/schwarzlichtbezirk/pds/pb"
+
+	grcplogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	"github.com/jessevdk/go-flags"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/grpclog"
 )
 
 var (
@@ -23,8 +25,21 @@ var (
 	exitwg sync.WaitGroup
 )
 
+var grpclog *logrus.Entry
+
 func init() {
-	grpclog.SetLoggerV2(grpclog.NewLoggerV2(os.Stdout, os.Stderr, os.Stderr))
+	grpclog = logrus.NewEntry(&logrus.Logger{
+		Out: os.Stdout,
+		Formatter: &logrus.TextFormatter{
+			ForceColors:     true,
+			DisableColors:   false,
+			FullTimestamp:   true,
+			TimestampFormat: "15:04:05",
+		},
+		Hooks: make(logrus.LevelHooks),
+		Level: logrus.InfoLevel,
+	})
+	grcplogrus.ReplaceGrpcLogger(grpclog)
 }
 
 // Init performs global data initialization.

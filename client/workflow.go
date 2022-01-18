@@ -7,16 +7,16 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
 
+	grcplogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jessevdk/go-flags"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/resolver"
 	"google.golang.org/grpc/resolver/manual"
 )
@@ -29,8 +29,25 @@ var (
 	exitwg sync.WaitGroup
 )
 
+var grpclog *logrus.Entry
+
 func init() {
-	grpclog.SetLoggerV2(grpclog.NewLoggerV2(os.Stdout, os.Stderr, os.Stderr))
+	var ll, err = logrus.ParseLevel(cfg.LogLevel)
+	if err != nil {
+		ll = logrus.InfoLevel
+	}
+	grpclog = logrus.NewEntry(&logrus.Logger{
+		Out: os.Stdout,
+		Formatter: &logrus.TextFormatter{
+			ForceColors:     cfg.ForceColors,
+			DisableColors:   false,
+			FullTimestamp:   true,
+			TimestampFormat: cfg.TimestampFormat,
+		},
+		Hooks: make(logrus.LevelHooks),
+		Level: ll,
+	})
+	grcplogrus.ReplaceGrpcLogger(grpclog)
 }
 
 // Init performs global data initialization.
@@ -87,8 +104,6 @@ func Init() {
 			panic("no way to here")
 		}
 	}
-	// correct config
-	cfg.AddrGRPC = envfmt(cfg.AddrGRPC)
 }
 
 // Run launches server listeners.
@@ -103,7 +118,7 @@ func Run() {
 		defer grpccancel() // send close signal to gRPC endpoint function
 
 		var addrs []resolver.Address
-		for _, addr := range strings.Split(envfmt(cfg.AddrGRPC), ";") {
+		for _, addr := range cfg.AddrGRPC {
 			addrs = append(addrs, resolver.Address{Addr: addr})
 		}
 		var r = manual.NewBuilderWithScheme(cfg.SchemeGRPC)
@@ -134,7 +149,7 @@ func Run() {
 
 		// data is ready, so HTTP can safely serve
 		var httpwg sync.WaitGroup
-		for _, addr := range strings.Split(envfmt(cfg.PortHTTP), ";") {
+		for _, addr := range cfg.PortHTTP {
 			var addr = envfmt(addr) // localize
 			httpwg.Add(1)
 			exitwg.Add(1)

@@ -7,20 +7,23 @@ import (
 	"time"
 
 	"github.com/jessevdk/go-flags"
-	"google.golang.org/grpc/grpclog"
 	"gopkg.in/yaml.v3"
 )
 
-// CfgCmdLine is command line arguments representation for YAML settings.
+// CfgCmdLine is command line arguments managment settings.
 type CfgCmdLine struct {
 	ConfigPath string `json:"-" yaml:"-" env:"CONFIGPATH" short:"c" long:"cfgpath" description:"Configuration path. Can be full path to config folder, or relative from executable destination."`
 	NoConfig   bool   `json:"-" yaml:"-" long:"nocfg" description:"Specifies do not load settings from YAML-settings file, keeps default."`
-	DataFile   string `json:"data-file" yaml:"data-file" short:"d" long:"data" default:"ports.json" description:"Name of file with database."`
+}
+
+// CfgData is data managment settings.
+type CfgDataKit struct {
+	DataFile string `json:"data-file" yaml:"data-file" short:"d" long:"data" default:"ports.json" description:"Name of file with database."`
 }
 
 // CfgWebServ is web server settings.
 type CfgWebServ struct {
-	PortHTTP          string        `json:"port-http" yaml:"port-http" env:"PORTHTTP" env-delim:";" short:"w" long:"porthttp" description:"List of address:port values for non-encrypted connections. Address is skipped in most common cases, port only remains."`
+	PortHTTP          []string      `json:"port-http" yaml:"port-http" env:"PORTHTTP" env-delim:";" short:"w" long:"http" description:"List of address:port values for non-encrypted connections. Address is skipped in most common cases, port only remains."`
 	ReadTimeout       time.Duration `json:"read-timeout" yaml:"read-timeout" long:"rt" description:"Maximum duration for reading the entire request, including the body."`
 	ReadHeaderTimeout time.Duration `json:"read-header-timeout" yaml:"read-header-timeout" long:"rht" description:"Amount of time allowed to read request headers."`
 	WriteTimeout      time.Duration `json:"write-timeout" yaml:"write-timeout" long:"wt" description:"Maximum duration before timing out writes of the response."`
@@ -31,25 +34,32 @@ type CfgWebServ struct {
 }
 
 type CfgRpcServ struct {
-	AddrGRPC   string        `json:"addr-grpc" yaml:"addr-grpc" env:"ADDRGRPC" short:"u" long:"url" description:"List of URL or IP-addresses with gRPC-services hosts."`
-	SchemeGRPC string        `json:"scheme-grpc" yaml:"scheme-grpc" long:"scheme" description:"gRPC scheme name."`
-	ApiTimeout time.Duration `json:"api-timeout" yaml:"api-timeout"`
+	AddrGRPC   []string `json:"addr-grpc" yaml:"addr-grpc" env:"ADDRGRPC" env-delim:";" short:"g" long:"grcp" description:"List of URL or IP-addresses with gRPC-services hosts."`
+	SchemeGRPC string   `json:"scheme-grpc,omitempty" yaml:"scheme-grpc,omitempty" long:"scheme" description:"gRPC scheme name."`
+}
+
+type CfgLogger struct {
+	LogLevel        string `json:"log-level" yaml:"log-level" long:"ll" default:"info" description:"The logging level the logger should log at. Can be: panic, fatal, error, warn, info, debug, trace."`
+	ForceColors     bool   `json:"force-colors" yaml:"force-colors" long:"fc" description:"Set to true to bypass checking for a TTY before outputting colors."`
+	TimestampFormat string `json:"timestamp-format,omitempty" yaml:"timestamp-format,omitempty" long:"tsf" description:"Format to use is the same than for time.Format or time.Parse from the standard library."`
 }
 
 // Config is common service settings.
 type Config struct {
-	CfgCmdLine `json:"command-line" yaml:"command-line" group:"Data Parameters"`
-	CfgWebServ `json:"webserver" yaml:"webserver" group:"Web Server"`
-	CfgRpcServ `json:"grpcserver" yaml:"grpcserver" group:"gRPC Server"`
+	CfgCmdLine `json:"-" yaml:"-" group:"Command line arguments"`
+	CfgDataKit `json:"data-kit" yaml:"data-kit" group:"Data Parameters"`
+	CfgWebServ `json:"web-server" yaml:"webserver" group:"Web Server"`
+	CfgRpcServ `json:"grpc-server" yaml:"grpcserver" group:"gRPC Server"`
+	CfgLogger  `json:"logger" yaml:"logger" group:"gRCP Logger"`
 }
 
 // Instance of common service settings.
 var cfg = Config{ // inits default values:
-	CfgCmdLine: CfgCmdLine{
+	CfgDataKit: CfgDataKit{
 		DataFile: "ports.json",
 	},
 	CfgWebServ: CfgWebServ{
-		PortHTTP:          ":8008",
+		PortHTTP:          []string{":8008"},
 		ReadTimeout:       time.Duration(15) * time.Second,
 		ReadHeaderTimeout: time.Duration(15) * time.Second,
 		WriteTimeout:      time.Duration(15) * time.Second,
@@ -58,9 +68,13 @@ var cfg = Config{ // inits default values:
 		ShutdownTimeout:   time.Duration(15) * time.Second,
 	},
 	CfgRpcServ: CfgRpcServ{
-		AddrGRPC:   "localhost:50051;localhost:50052",
+		AddrGRPC:   []string{"localhost:50051", "localhost:50052"},
 		SchemeGRPC: "pds",
-		ApiTimeout: 2 * time.Second,
+	},
+	CfgLogger: CfgLogger{
+		LogLevel:        "info",
+		ForceColors:     true,
+		TimestampFormat: "15:04:05",
 	},
 }
 

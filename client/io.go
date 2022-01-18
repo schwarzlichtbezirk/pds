@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/schwarzlichtbezirk/pds/pb"
-	"google.golang.org/grpc/grpclog"
 )
 
 // ReadDataFile reads ports.json file step by step,

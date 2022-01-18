@@ -1,6 +1,14 @@
 # Server configuration file, used in read-only mode on service initialization.
 
-# List of ports of gRPC-services.
-port-grpc:
-  - :50051
-  - :50052
+grpc-server:
+  # List of ports of gRPC-services.
+  port-grpc:
+    - :50051
+    - :50052
+logger:
+  # The logging level the logger should log at. Can be: panic, fatal, error, warn, info, debug, trace.
+  log-level: info
+  # Set to true to bypass checking for a TTY before outputting colors.
+  force-colors: true
+  # Format to use is the same than for time.Format or time.Parse from the standard library.
+  timestamp-format: "15:04:05"

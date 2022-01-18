@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/schwarzlichtbezirk/pds/pb"
+
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/grpclog"
 )
 
 // clients for direct gRPC calls

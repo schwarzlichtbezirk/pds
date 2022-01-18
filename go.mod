@@ -3,9 +3,11 @@ module github.com/schwarzlichtbezirk/pds
 go 1.17
 
 require (
+	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.2
 	github.com/jessevdk/go-flags v1.5.0
-	google.golang.org/genproto v0.0.0-20220114231437-d2e6a121cae0
+	github.com/sirupsen/logrus v1.8.1
+	google.golang.org/genproto v0.0.0-20220118154757-00ab72f36ad5
 	google.golang.org/grpc v1.43.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b

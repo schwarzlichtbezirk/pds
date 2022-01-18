@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/schwarzlichtbezirk/pds/pb"
-	"google.golang.org/grpc/grpclog"
+
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )

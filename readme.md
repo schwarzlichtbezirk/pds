@@ -46,6 +46,7 @@ Here is `pds.proto` with gRPC interface declaration, and files produced by proto
 
 ```batch
 git clone github.com/schwarzlichtbezirk/pds
+cd pds
 call tools/gitinstall.cmd
 ```
 
