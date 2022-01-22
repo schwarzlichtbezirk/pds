@@ -25,7 +25,7 @@ RUN go mod download
 COPY . .
 
 # Build service and put executable.
-RUN go build -o /go/bin/server ./server
+RUN go build -o /go/bin/server -ldflags="-X 'main.buildvers=`cat buildvers.txt`' -X 'main.builddate=$(date +%F)'" ./server
 
 ##
 ## Deploy stage
@@ -37,7 +37,7 @@ FROM gcr.io/distroless/base-debian11
 # Copy compiled executables to new image destination.
 COPY --from=build /go/bin/server /go/bin/server
 # Copy configuration files.
-COPY --from=build /go/src/github.com/schwarzlichtbezirk/pds/config/* /go/bin/pds-config/
+COPY --from=build /go/src/github.com/schwarzlichtbezirk/pds/config/* /go/bin/config/
 
 # Open gRPC listen ports.
 EXPOSE 50051 50052

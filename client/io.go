@@ -10,7 +10,7 @@ import (
 	"github.com/schwarzlichtbezirk/pds/pb"
 )
 
-// ReadDataFile reads ports.json file step by step,
+// ReadDataFile reads pds-ports.json file step by step,
 // and sends readed ports to gRPC stream.
 func ReadDataFile(fname string) (err error) {
 	grpclog.Infof("read file '%s'\n", fname)

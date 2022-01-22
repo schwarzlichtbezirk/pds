@@ -22,7 +22,7 @@ Client and server test sample with gRPC streaming and REST functionality. Sample
 - `router.go` have a routing for HTTP-server, and some auxiliary functions for HTTP handlers.
 - `handlers.go` contains the list of HTTP handlers and error codes for them.
 - `io.go` reads settings from configuration file. Reads `port.json` file with predefined data format, and sends items step-by-step to gRPC server. File does not limited by size.
-- `envfmt.go` have helper function to expand environment variables in the file path.
+- `auxiliary.go` have helper function to expand environment variables in the file path.
 
 ### server
 
@@ -31,6 +31,7 @@ Client and server test sample with gRPC streaming and REST functionality. Sample
 - `config.go`, all settings of application are collected into single structure with single initialization. This singleton can be streamed into JSON or YAML file.
 - `grpcserv.go` have gRPC interface implementation for server.
 - `io.go` reads settings from configuration file.
+- `auxiliary.go` have helper function to expand environment variables in the file path.
 
 ### pb
 
@@ -42,12 +43,12 @@ Here is `pds.proto` with gRPC interface declaration, and files produced by proto
 
 2. Install [protocol buffer compiler](https://github.com/protocolbuffers/protobuf/blob/master/README.md#protocol-compiler-installation).
 
-3. Clone this git repo and run `tools/gitinstall.cmd` batch-file placed in project to deploy all dependencies.
+3. Clone this git repo and run `tools/gitdeploy.cmd` batch-file placed in project to deploy all dependencies.
 
 ```batch
 git clone github.com/schwarzlichtbezirk/pds
 cd pds
-call tools/gitinstall.cmd
+call tools/gitdeploy.cmd
 ```
 
 ## How to run on localhost

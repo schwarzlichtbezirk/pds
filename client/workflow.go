@@ -32,6 +32,12 @@ var (
 var grpclog *logrus.Entry
 
 func init() {
+	// first setup logger with default config values
+	SetupLogger()
+}
+
+// SetupLogger inits logger configured with service settings.
+func SetupLogger() {
 	var ll, err = logrus.ParseLevel(cfg.LogLevel)
 	if err != nil {
 		ll = logrus.InfoLevel
@@ -52,6 +58,7 @@ func init() {
 
 // Init performs global data initialization.
 func Init() {
+	grpclog.Printf("version: %s, builton: %s\n", buildvers, builddate)
 	grpclog.Infoln("starts")
 
 	// create context and wait the break
@@ -103,12 +110,15 @@ func Init() {
 		if _, err = flags.NewParser(&cfg, flags.PassDoubleDash).Parse(); err != nil {
 			panic("no way to here")
 		}
+		// second logger setup - with updated config values
+		SetupLogger()
 	}
 }
 
 // Run launches server listeners.
 func Run() {
 	var grpcctx, grpccancel = context.WithCancel(context.Background())
+	var httpctx, httpcancel = context.WithCancel(context.Background())
 	var mux = runtime.NewServeMux()
 
 	// starts HTTP-gRPC proxy
@@ -143,14 +153,14 @@ func Run() {
 		grpclog.Infof("grpc connected on %s\n", address)
 
 		// init database
-		if err := ReadDataFile(envfmt(cfg.DataFile)); err != nil {
+		if err := ReadDataFile(EnvFmt(cfg.DataFile)); err != nil {
 			grpclog.Fatal(err)
 		}
 
 		// data is ready, so HTTP can safely serve
 		var httpwg sync.WaitGroup
 		for _, addr := range cfg.PortHTTP {
-			var addr = envfmt(addr) // localize
+			var addr = EnvFmt(addr) // localize
 			httpwg.Add(1)
 			exitwg.Add(1)
 			go func() {
@@ -190,12 +200,20 @@ func Run() {
 			}()
 		}
 		httpwg.Wait()
-		grpclog.Infoln("ready")
+		httpcancel()
 
 		// wait for exit signal
 		<-exitctx.Done()
 		grpclog.Infoln("grpc disconnect")
 	}()
+
+	// wait until exit or service is ready
+	select {
+	case <-httpctx.Done():
+		grpclog.Infoln("service ready")
+	case <-exitctx.Done():
+		return
+	}
 }
 
 // Done performs graceful network shutdown,

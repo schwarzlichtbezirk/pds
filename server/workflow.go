@@ -28,22 +28,33 @@ var (
 var grpclog *logrus.Entry
 
 func init() {
+	// first setup logger with default config values
+	SetupLogger()
+}
+
+// SetupLogger inits logger configured with service settings.
+func SetupLogger() {
+	var ll, err = logrus.ParseLevel(cfg.LogLevel)
+	if err != nil {
+		ll = logrus.InfoLevel
+	}
 	grpclog = logrus.NewEntry(&logrus.Logger{
 		Out: os.Stdout,
 		Formatter: &logrus.TextFormatter{
-			ForceColors:     true,
+			ForceColors:     cfg.ForceColors,
 			DisableColors:   false,
 			FullTimestamp:   true,
-			TimestampFormat: "15:04:05",
+			TimestampFormat: cfg.TimestampFormat,
 		},
 		Hooks: make(logrus.LevelHooks),
-		Level: logrus.InfoLevel,
+		Level: ll,
 	})
 	grcplogrus.ReplaceGrpcLogger(grpclog)
 }
 
 // Init performs global data initialization.
 func Init() {
+	grpclog.Printf("version: %s, builton: %s\n", buildvers, builddate)
 	grpclog.Infoln("starts")
 
 	// create context and wait the break
@@ -95,12 +106,15 @@ func Init() {
 		if _, err = flags.NewParser(&cfg, flags.PassDoubleDash).Parse(); err != nil {
 			panic("no way to here")
 		}
+		// second logger setup - with updated config values
+		SetupLogger()
 	}
 }
 
 // Run launches server listeners.
 func Run() {
 	// starts gRPC servers
+	var grpcctx, grpccancel = context.WithCancel(context.Background())
 	func() {
 		var grpcwg sync.WaitGroup
 		for _, addr := range cfg.PortGRPC {
@@ -137,8 +151,16 @@ func Run() {
 		}
 
 		grpcwg.Wait()
-		grpclog.Infoln("grpc ready")
+		grpccancel()
 	}()
+
+	// wait until exit or service is ready
+	select {
+	case <-grpcctx.Done():
+		grpclog.Infoln("service ready")
+	case <-exitctx.Done():
+		return
+	}
 }
 
 // Done performs graceful network shutdown,

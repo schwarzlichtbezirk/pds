@@ -2,8 +2,8 @@
 
 data-kit:
   # Name of file with database.
-  data-file: ports.json
-webs-erver: # See https://golang.org/pkg/net/http/#Server for details.
+  data-file: pds-ports.json
+web-server: # See https://golang.org/pkg/net/http/#Server for details.
   # List of address:port values for non-encrypted connections.
   # Address is skipped in most common cases, port only remains.
   port-http:
