@@ -42,7 +42,7 @@ func (routeToolGuideServer) Ping(ctx context.Context, cnt *emptypb.Empty) (*time
 	return ts, nil
 }
 
-func (routeToolGuideServer) Echo(ctx context.Context, cnt *pb.Content) (*pb.Content, error) {
+func (routeToolGuideServer) Echo(ctx context.Context, cnt *pb.EchoContent) (*pb.EchoContent, error) {
 	return cnt, nil
 }
 

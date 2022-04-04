@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.19.3
-// source: pb/pds.proto
+// source: pds.proto
 
 package pb
 
@@ -24,9 +24,10 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ToolGuideClient interface {
-	// Check up service health.
+	// Returns time when this message was received.
 	Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*timestamppb.Timestamp, error)
-	Echo(ctx context.Context, in *Content, opts ...grpc.CallOption) (*Content, error)
+	// Returns message content itself.
+	Echo(ctx context.Context, in *EchoContent, opts ...grpc.CallOption) (*EchoContent, error)
 }
 
 type toolGuideClient struct {
@@ -46,8 +47,8 @@ func (c *toolGuideClient) Ping(ctx context.Context, in *emptypb.Empty, opts ...g
 	return out, nil
 }
 
-func (c *toolGuideClient) Echo(ctx context.Context, in *Content, opts ...grpc.CallOption) (*Content, error) {
-	out := new(Content)
+func (c *toolGuideClient) Echo(ctx context.Context, in *EchoContent, opts ...grpc.CallOption) (*EchoContent, error) {
+	out := new(EchoContent)
 	err := c.cc.Invoke(ctx, "/pds.ToolGuide/Echo", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -59,9 +60,10 @@ func (c *toolGuideClient) Echo(ctx context.Context, in *Content, opts ...grpc.Ca
 // All implementations must embed UnimplementedToolGuideServer
 // for forward compatibility
 type ToolGuideServer interface {
-	// Check up service health.
+	// Returns time when this message was received.
 	Ping(context.Context, *emptypb.Empty) (*timestamppb.Timestamp, error)
-	Echo(context.Context, *Content) (*Content, error)
+	// Returns message content itself.
+	Echo(context.Context, *EchoContent) (*EchoContent, error)
 	mustEmbedUnimplementedToolGuideServer()
 }
 
@@ -72,7 +74,7 @@ type UnimplementedToolGuideServer struct {
 func (UnimplementedToolGuideServer) Ping(context.Context, *emptypb.Empty) (*timestamppb.Timestamp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
-func (UnimplementedToolGuideServer) Echo(context.Context, *Content) (*Content, error) {
+func (UnimplementedToolGuideServer) Echo(context.Context, *EchoContent) (*EchoContent, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Echo not implemented")
 }
 func (UnimplementedToolGuideServer) mustEmbedUnimplementedToolGuideServer() {}
@@ -107,7 +109,7 @@ func _ToolGuide_Ping_Handler(srv interface{}, ctx context.Context, dec func(inte
 }
 
 func _ToolGuide_Echo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Content)
+	in := new(EchoContent)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -119,7 +121,7 @@ func _ToolGuide_Echo_Handler(srv interface{}, ctx context.Context, dec func(inte
 		FullMethod: "/pds.ToolGuide/Echo",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ToolGuideServer).Echo(ctx, req.(*Content))
+		return srv.(ToolGuideServer).Echo(ctx, req.(*EchoContent))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -141,7 +143,7 @@ var ToolGuide_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "pb/pds.proto",
+	Metadata: "pds.proto",
 }
 
 // PortGuideClient is the client API for PortGuide service.
@@ -494,5 +496,5 @@ var PortGuide_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "pb/pds.proto",
+	Metadata: "pds.proto",
 }

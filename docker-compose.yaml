@@ -1,6 +1,6 @@
 # Build images by followed commands and run composition:
-#    docker build --pull --rm -f "Dockerfile.server" -t pds-server:latest "."
-#    docker build --pull --rm -f "Dockerfile.client" -t pds-client:latest "."
+#    docker build --pull --rm -f "server.dockerfile" -t pds-server:latest "."
+#    docker build --pull --rm -f "client.dockerfile" -t pds-client:latest "."
 #    docker-compose -f "docker-compose.yaml" up -d --build
 
 version: "3.9"

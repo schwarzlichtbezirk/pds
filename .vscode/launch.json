@@ -9,14 +9,16 @@
 			"type": "go",
 			"request": "launch",
 			"mode": "auto",
-			"program": "${workspaceFolder}/server"
+			"program": "${workspaceFolder}/server",
+			"cwd": "${workspaceFolder}"
 		},
 		{
 			"name": "client",
 			"type": "go",
 			"request": "launch",
 			"mode": "auto",
-			"program": "${workspaceFolder}/client"
+			"program": "${workspaceFolder}/client",
+			"cwd": "${workspaceFolder}"
 		}
 	],
 	"compounds": [

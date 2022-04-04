@@ -11,7 +11,7 @@ import (
 
 	"github.com/schwarzlichtbezirk/pds/pb"
 
-	grcplogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -49,12 +49,12 @@ func SetupLogger() {
 		Hooks: make(logrus.LevelHooks),
 		Level: ll,
 	})
-	grcplogrus.ReplaceGrpcLogger(grpclog)
+	grpc_logrus.ReplaceGrpcLogger(grpclog)
 }
 
 // Init performs global data initialization.
 func Init() {
-	grpclog.Printf("version: %s, builton: %s\n", buildvers, builddate)
+	grpclog.Infof("version: %s, builton: %s\n", buildvers, builddate)
 	grpclog.Infoln("starts")
 
 	// create context and wait the break

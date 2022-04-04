@@ -27,31 +27,31 @@ if %errorlevel% neq 0 goto:eof
 
 echo.
 echo STAGE#3: compile proto-files
-call tools/pb.cmd
+call task/pb.cmd
 if %errorlevel% neq 0 goto:eof
-call tools/swagger.cmd
+call task/swagger.cmd
 if %errorlevel% neq 0 goto:eof
 
 echo.
 echo STAGE#4: compile executable binaries
 if "%PROCESSOR_ARCHITECTURE%" equ "amd64" (
 	echo compiling for AMD64
-	call tools/build.win.x64.cmd
+	call task/build.win.x64.cmd
 	goto endarch
 )
 if "%PROCESSOR_ARCHITECTURE%" equ "AMD64" (
 	echo compiling for AMD64
-	call tools/build.win.x64.cmd
+	call task/build.win.x64.cmd
 	goto endarch
 )
 if "%PROCESSOR_ARCHITECTURE%" equ "x86" (
 	echo compiling for x86
-	call tools/build.win.x86.cmd
+	call task/build.win.x86.cmd
 	goto endarch
 )
 if "%PROCESSOR_ARCHITECTURE%" equ "X86" (
 	echo compiling for x86
-	call tools/build.win.x86.cmd
+	call task/build.win.x86.cmd
 	goto endarch
 )
 echo processor architecture %PROCESSOR_ARCHITECTURE% does not supported
@@ -59,5 +59,5 @@ echo processor architecture %PROCESSOR_ARCHITECTURE% does not supported
 
 echo.
 echo STAGE#5: build docker images
-docker build --pull --rm -f "Dockerfile.server" -t pds-server:latest "."
-docker build --pull --rm -f "Dockerfile.client" -t pds-client:latest "."
+docker build --pull --rm -f "server.dockerfile" -t pds-server:latest "."
+docker build --pull --rm -f "client.dockerfile" -t pds-client:latest "."

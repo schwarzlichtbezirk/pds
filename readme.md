@@ -43,17 +43,17 @@ Here is `pds.proto` with gRPC interface declaration, and files produced by proto
 
 2. Install [protocol buffer compiler](https://github.com/protocolbuffers/protobuf/blob/master/README.md#protocol-compiler-installation).
 
-3. Clone this git repo and run `tools/gitdeploy.cmd` batch-file placed in project to deploy all dependencies.
+3. Clone this git repo and run `task/gitdeploy.cmd` batch-file placed in project to deploy all dependencies.
 
 ```batch
 git clone github.com/schwarzlichtbezirk/pds
 cd pds
-call tools/gitdeploy.cmd
+call task/gitdeploy.cmd
 ```
 
 ## How to run on localhost
 
-Folder `github.com/schwarzlichtbezirk/pds/tools` contains batch helpers to compile services for Windows for x86 and amd64 platforms. Also it has shell-scripts to compile for Linux amd64 platforms. So, compile application by `tools/build.win.x64.cmd` (or batch for x86), and run `tools/start.x64.cmd` batch-file to start composition of client and server.
+Folder `github.com/schwarzlichtbezirk/pds/task` contains batch helpers to compile services for Windows for x86 and amd64 platforms. Also it has shell-scripts to compile for Linux amd64 platforms. So, compile application by `task/build.win.x64.cmd` (or batch for x86), and run `task/start.x64.cmd` batch-file to start composition of client and server.
 
 ## Connections
 
@@ -76,8 +76,8 @@ cd /d %GOPATH%/src/github.com/schwarzlichtbezirk/pds
 2. Build docker images for `server` and for `client` services.
 
 ```batch
-docker build --pull --rm -f "Dockerfile.server" -t pds-server:latest "."
-docker build --pull --rm -f "Dockerfile.client" -t pds-client:latest "."
+docker build --pull --rm -f "server.dockerfile" -t pds-server:latest "."
+docker build --pull --rm -f "client.dockerfile" -t pds-client:latest "."
 ```
 
 3. Then run docker compose file.

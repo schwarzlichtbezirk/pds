@@ -7,15 +7,16 @@ import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
-// Interface with system helper functionality.
+// Check up service health.
 service ToolGuide {
-	// Check up service health.
+	// Returns time when this message was received.
 	rpc Ping (google.protobuf.Empty) returns (google.protobuf.Timestamp) {
 		option (google.api.http) = {
 			post: "/api/tool/ping"
 		};
 	}
-	rpc Echo (pds.Content) returns (pds.Content) {
+	// Returns message content itself.
+	rpc Echo (pds.EchoContent) returns (pds.EchoContent) {
 		option (google.api.http) = {
 			post: "/api/tool/echo"
 			body: "*"
@@ -26,8 +27,8 @@ service ToolGuide {
 	}
 }
 
-// Ping message content.
-message Content {
+// Echo message content.
+message EchoContent {
 	bytes value = 1;
 }
 

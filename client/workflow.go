@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	grcplogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jessevdk/go-flags"
 	"github.com/sirupsen/logrus"
@@ -53,12 +53,12 @@ func SetupLogger() {
 		Hooks: make(logrus.LevelHooks),
 		Level: ll,
 	})
-	grcplogrus.ReplaceGrpcLogger(grpclog)
+	grpc_logrus.ReplaceGrpcLogger(grpclog)
 }
 
 // Init performs global data initialization.
 func Init() {
-	grpclog.Printf("version: %s, builton: %s\n", buildvers, builddate)
+	grpclog.Infof("version: %s, builton: %s\n", buildvers, builddate)
 	grpclog.Infoln("starts")
 
 	// create context and wait the break
@@ -143,6 +143,8 @@ func Run() {
 			grpc.WithBlock(),
 			grpc.WithResolvers(r),
 			grpc.WithDefaultServiceConfig(serviceConfig),
+			//grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(monitoringClientUnary, retryUnary)),
+			//grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(monitoringClientStream, retryStream)),
 		}
 
 		// establish connection and create gRPC clients
